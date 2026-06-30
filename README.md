@@ -2,7 +2,7 @@
 
 Backend da plataforma ColetaFlow.
 
-**Stack:** NestJS · TypeScript · MySQL · Prisma · Redis · WebSocket · JWT · CQRS · Swagger · Jest · Docker
+**Stack:** NestJS · TypeScript · MySQL 8 · Prisma · Redis · WebSocket (socket.io) · JWT · Swagger · Jest · Docker
 
 ---
 
@@ -10,23 +10,25 @@ Backend da plataforma ColetaFlow.
 
 ```bash
 # 1. Instalar dependências
-npm install
+yarn install
 
-# 2. Configurar variáveis de ambiente
+# 2. Variáveis de ambiente
 cp .env.example .env
-# Editar DATABASE_URL, JWT_SECRET, MAPBOX_TOKEN
+# Editar DATABASE_URL, JWT_SECRET, REDIS_HOST
 
 # 3. Subir MySQL e Redis
 docker-compose up -d mysql redis
 
-# 4. Rodar migrations
-npx prisma migrate dev --name init
+# 4. Aplicar schema no banco
+yarn db:push          # prisma db push (dev)
+# ou em produção:
+yarn db:migrate:prod  # prisma migrate deploy
 
-# 5. (Opcional) Popular banco com dados iniciais
-npm run db:seed
+# 5. Criar usuários iniciais
+yarn db:seed
 
 # 6. Rodar em desenvolvimento
-npm run start:dev
+yarn start:dev
 ```
 
 API disponível em: `http://localhost:3333`
@@ -34,110 +36,122 @@ Swagger UI em: `http://localhost:3333/docs`
 
 ---
 
-## Docker (todos os serviços)
+## Usuários de teste (seed)
+
+| E-mail | Senha | Role |
+|---|---|---|
+| `cordeiro@adm.com` | `123456` | ADMIN |
+| `cordeiro@empresa.com` | `123456` | OPERATOR |
+| `cordeiro@motorista.com` | `123456` | DRIVER |
+
+---
+
+## Docker
 
 ```bash
+# Apenas MySQL e Redis (desenvolvimento local)
+docker-compose up -d mysql redis
+
+# Todos os serviços (API + MySQL + Redis)
 docker-compose up -d
 ```
 
-Sobe: MySQL (3306) + Redis (6379) + API (3333)
+**Nota macOS ARM64:** Docker Desktop às vezes não faz bind de porta do MySQL para o host. Solução:
+```bash
+docker network connect coleta-flow-api_default coletaflow-mysql
+# Então rodar prisma de um container na mesma rede
+```
 
 ---
 
 ## Banco de dados
 
 ```bash
-# Criar migration após alterar schema.prisma
-npx prisma migrate dev --name nome-da-migration
-
-# Aplicar migrations em produção
-npm run db:migrate:prod
-
-# Abrir Prisma Studio (interface visual do banco)
-npm run db:studio
-
-# Gerar Prisma Client após alterar schema
-npm run db:generate
+yarn db:push        # aplica schema sem gerar migration (dev)
+yarn db:generate    # gera Prisma Client após alterar schema
+yarn db:seed        # popula banco com dados iniciais
+yarn db:studio      # Prisma Studio (interface visual)
 ```
+
+O schema usa `prismaSchemaFolder` (preview feature) — arquivos separados em `prisma/schema/`.
 
 ---
 
 ## Testes
 
 ```bash
-# Rodar todos os testes unitários
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Com coverage
-npm run test:cov
-
-# Testes E2E (requer banco de teste rodando)
-npm run test:e2e
-```
-
-**Meta de cobertura:**
-- 80% geral
-- 90% em regras críticas (multi-tenant, geofence, status, declarações)
-
----
-
-## Lint e qualidade
-
-```bash
-npm run lint          # ESLint + auto-fix
-npm run format        # Prettier
+yarn test           # todos os testes unitários
+yarn test:watch     # watch mode
+yarn test:cov       # com coverage
+yarn test:e2e       # testes E2E
 ```
 
 ---
 
-## Arquitetura
-
-### Módulos principais
+## Arquitetura — Módulos
 
 ```
-AuthModule              → JWT, Passport, guards globais
-TenantsModule           → gerenciamento de organizações (SUPER_ADMIN)
-UsersModule             → usuários e perfis RBAC
-DonorRequestsModule     → CQRS — ciclo de vida das solicitações
+AuthModule              → JWT, Passport, guards globais, @Public() decorator
+UsersModule             → usuários, RBAC (roles: ADMIN, OPERATOR, DRIVER, COLLECTION_POINT_OPERATOR)
+DonorRequestsModule     → ciclo de vida das solicitações de coleta
 CollectionPointsModule  → pontos de coleta cadastrados
-RoutesModule            → rotas, atribuição de motoristas, geofence
-TrackingModule          → WebSocket + Redis para localização em tempo real
-WeightsModule           → registro de peso real
-DeclarationsModule      → geração de PDF de declaração
-FilesModule             → upload e storage de arquivos
-ReportsModule           → dashboard e métricas
-EventStoreModule        → event store de negócio (global)
+RoutesModule            → rotas, atribuição de motoristas, confirmações de status
+TrackingModule          → WebSocket gateway + Redis para localização em tempo real
+WeightsModule           → registro de peso no ponto de coleta
+DeclarationsModule      → geração de declaração PDF
 ```
 
-### Padrão CQRS
+---
+
+## Fluxo de tracking em tempo real
 
 ```
-Controller → DTO → CommandBus/QueryBus → Handler → Domain Service → Repository → Prisma
-                                                  ↘ EventStore
-                                                  ↘ Redis
-                                                  ↘ WebSocket Gateway
+App (4s) ──POST /routes/:id/location──→ RoutesService.sendLocation()
+                                               │
+                               ┌───────────────┴──────────────────┐
+                               ▼                                  ▼
+                    Redis.setex(driver:{driverId}:location)   Redis.setex(route:{routeId}:live-location)
+                               │
+                               ▼
+                    TrackingGateway.emit('tracking:update')
+                               │
+                    WebSocket room: route:{routeId}
+                               │
+                    ┌──────────┴──────────┐
+                    ▼                     ▼
+               Monitor               /public/tracking/:token
 ```
 
-### Multi-tenant
+**Chaves Redis:**
+- `driver:{driverId}:location` — TTL 5 min, última posição do motorista
+- `route:{routeId}:live-location` — TTL 5 min, posição ligada à rota
+- `tracking:{token}:session` — TTL configurável, token público de rastreamento
 
-Toda request autenticada carrega `tenantId` no JWT.
-Guards e interceptors aplicam filtro automático por tenant.
-Nenhuma query retorna dados de outro tenant.
+---
 
-### Geofence
+## WebSocket
 
-Motorista só pode confirmar entrega se estiver dentro de `GEOFENCE_RADIUS_METERS` (padrão: 100m) do ponto de coleta.
-Implementado com fórmula Haversine em `src/common/utils/geo.utils.ts`.
+**Namespace:** `/tracking`
 
-### Tracking realtime
+**Eventos do cliente para o servidor:**
+- `tracking:subscribe` `{ routeId }` — entra na sala da rota
+- `tracking:unsubscribe` `{ routeId }` — sai da sala
+- `driver:location:update` `{ routeId, driverId, lat, lng, ... }` — motorista envia localização (requer JWT)
 
-- App envia GPS via WebSocket a cada 4s
-- API salva última posição no Redis (não no event store)
-- API retransmite para monitor e página pública de tracking
-- Token de tracking expira ao finalizar rota
+**Eventos do servidor para o cliente:**
+- `tracking:update` `{ routeId, driverId, lat, lng, speed, heading, battery, updatedAt }` — nova posição do motorista
+- `route:status:changed` `{ routeId, status }` — mudança de status da rota
+
+---
+
+## Roles
+
+| Role | Permissões |
+|---|---|
+| `ADMIN` | Acesso total |
+| `OPERATOR` | Solicitações, rotas, pontos, declarações |
+| `DRIVER` | Apenas rotas atribuídas a ele |
+| `COLLECTION_POINT_OPERATOR` | Confirmação de recebimento e pesagem |
 
 ---
 
@@ -146,36 +160,30 @@ Implementado com fórmula Haversine em `src/common/utils/geo.utils.ts`.
 | Variável | Obrigatório | Descrição |
 |---|---|---|
 | `DATABASE_URL` | ✅ | Connection string MySQL |
-| `REDIS_HOST` | ✅ | Host do Redis |
-| `JWT_SECRET` | ✅ | Chave secreta JWT (mín. 16 chars) |
-| `APP_URL` | ✅ | URL do monitor (para CORS e links) |
-| `API_URL` | ✅ | URL da própria API |
-| `MAPBOX_TOKEN` | Recomendado | Token Mapbox para cálculo de rotas |
-| `GEOFENCE_RADIUS_METERS` | opcional | Raio de geofence em metros (padrão: 100) |
-| `TRACKING_TOKEN_EXPIRES_IN_MINUTES` | opcional | TTL do token de tracking (padrão: 180) |
+| `REDIS_HOST` | ✅ | Host do Redis (default: localhost) |
+| `REDIS_PORT` | ✅ | Porta do Redis (default: 6379) |
+| `JWT_SECRET` | ✅ | Chave secreta JWT |
+| `JWT_EXPIRES_IN` | opcional | Expiração do JWT (default: 7d) |
+| `APP_URL` | ✅ | URL do monitor (CORS e links de tracking) |
+| `GEOFENCE_RADIUS_METERS` | opcional | Raio de geofence em metros (default: 100) |
+| `TRACKING_TOKEN_EXPIRES_IN_MINUTES` | opcional | TTL do token de tracking (default: 180) |
 
 ---
 
-## Swagger / OpenAPI
+## Endpoints principais
 
-Acesse `http://localhost:3333/docs` com a API rodando.
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/auth/login` | Autenticação, retorna JWT |
+| `GET` | `/auth/me` | Usuário autenticado atual |
+| `GET` | `/donor-requests` | Lista solicitações de coleta |
+| `POST` | `/donor-requests/public` | Cria solicitação pública (sem auth) |
+| `GET` | `/routes` | Lista rotas |
+| `GET` | `/routes/assigned` | Rotas atribuídas ao motorista logado |
+| `POST` | `/routes/:id/start` | Inicia rota, gera tracking token |
+| `POST` | `/routes/:id/location` | Envia localização GPS (motorista) |
+| `PATCH` | `/routes/:id/stops/:stopId/arrive` | Confirma chegada no doador |
+| `GET` | `/public/tracking/:token` | Estado da rota via token público |
+| `GET` | `/collection-points` | Pontos de coleta disponíveis |
 
-A documentação inclui:
-- Todos os endpoints com exemplos de payload
-- Autenticação Bearer JWT
-- Tags por domínio
-- Códigos de erro e descrições
-- Exemplos de status de solicitação e rota
-- Exemplos de payload de localização realtime
-
----
-
-## Perfis (Roles)
-
-| Role | Permissões |
-|---|---|
-| `SUPER_ADMIN` | Acesso global a todos os tenants |
-| `TENANT_ADMIN` | Gerencia sua organização |
-| `OPERATOR` | Solicitações, rotas, pontos, declarações |
-| `DRIVER` | Apenas rotas atribuídas a ele |
-| `COLLECTION_POINT_OPERATOR` | Confirmação de recebimento e pesagem |
+Documentação completa em `/docs` (Swagger).
