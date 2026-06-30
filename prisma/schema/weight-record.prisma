@@ -1,0 +1,31 @@
+// =============================================================================
+// WeightRecord — pesagem real confirmada no ponto de coleta
+// Pré-requisito obrigatório para geração de Declaration (PDF).
+// =============================================================================
+
+model WeightRecord {
+  // — Identifiers
+  id                String  @id @default(uuid())
+  donorRequestId    String  @unique
+  routeId           String?
+  collectionPointId String?
+
+  // — Pesagem
+  grossWeightKg     Decimal  @db.Decimal(10, 3)
+  netWeightKg       Decimal  @db.Decimal(10, 3)
+  tareKg            Decimal? @db.Decimal(10, 3)
+  notes             String?
+
+  confirmedByUserId String?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  // — Relations
+  donorRequest    DonorRequest     @relation(fields: [donorRequestId], references: [id])
+  collectionPoint CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+  declaration     Declaration?
+
+  @@index([donorRequestId])
+  @@map("weight_records")
+}

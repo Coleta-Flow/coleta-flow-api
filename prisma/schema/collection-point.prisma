@@ -1,0 +1,33 @@
+// =============================================================================
+// CollectionPoint — ponto físico de recebimento de materiais
+// Usado em PickupDecision, RouteStop, WeightRecord e validação de geofence
+// =============================================================================
+
+model CollectionPoint {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Data
+  name           String
+  address        String
+  city           String
+  lat            Decimal @db.Decimal(10, 8)
+  lng            Decimal @db.Decimal(11, 8)
+  phone          String?
+  operatingHours String?
+  active         Boolean @default(true)
+
+  // — Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // — Relations
+  pickupDecisions PickupDecision[]
+  routeStops      RouteStop[]
+  weightRecords   WeightRecord[]
+
+  @@index([city])
+  @@index([active])
+  @@map("collection_points")
+}

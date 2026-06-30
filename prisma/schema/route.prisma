@@ -1,0 +1,67 @@
+// =============================================================================
+// Route — rota de coleta atribuída a um motorista
+// Gerada a partir de uma DonorRequest aprovada. Contém tracking token para
+// rastreamento público via WebSocket e referência ao Foreground Service KMP.
+// =============================================================================
+
+model Route {
+  // — Identifiers
+  id             String  @id @default(uuid())
+  donorRequestId String  @unique
+  driverId       String?
+
+  // — Data
+  status        RouteStatus @default(PLANNED)
+  trackingToken String?     @unique
+  cancelReason  String?
+
+  // — Timestamps operacionais
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  cancelledAt DateTime?
+
+  // — Timestamps de auditoria
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // — Relations
+  donorRequest    DonorRequest             @relation(fields: [donorRequestId], references: [id])
+  driver          Driver?                  @relation(fields: [driverId], references: [id])
+  stops           RouteStop[]
+  snapshots       DriverLocationSnapshot[]
+  trackingSession TrackingSession?
+
+  @@index([trackingToken])
+  @@map("routes")
+}
+
+// =============================================================================
+// RouteStop — parada individual de uma rota
+// type: DONOR_ADDRESS (coletar no doador) | COLLECTION_POINT (entregar no ponto)
+// lat/lng usados na validação de geofence ao confirmar chegada/entrega
+// =============================================================================
+
+model RouteStop {
+  // — Identifiers
+  id                String  @id @default(uuid())
+  routeId           String
+  collectionPointId String?
+
+  // — Data
+  sequence Int
+  type     String    // DONOR_ADDRESS | COLLECTION_POINT
+  address  String
+  lat      Decimal?  @db.Decimal(10, 8)
+  lng      Decimal?  @db.Decimal(11, 8)
+
+  // — Timestamps operacionais
+  arrivedAt   DateTime?
+  completedAt DateTime?
+
+  // — Relations
+  route           Route            @relation(fields: [routeId], references: [id])
+  collectionPoint CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+
+  @@index([routeId])
+  @@map("route_stops")
+}

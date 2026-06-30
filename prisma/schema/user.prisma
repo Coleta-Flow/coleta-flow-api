@@ -1,0 +1,56 @@
+// =============================================================================
+// User — usuário da plataforma com papel (RBAC)
+// Motoristas têm uma entrada adicional em Driver com dados do veículo
+// =============================================================================
+
+model User {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Data
+  name     String
+  email    String
+  password String
+  role     UserRole @default(OPERATOR)
+  phone    String?
+  active   Boolean  @default(true)
+
+  // — Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // — Relations
+  driver Driver?
+
+  @@unique([email])
+  @@map("users")
+}
+
+// =============================================================================
+// Driver — extensão de User para motoristas e coletores
+// Armazena dados do veículo e é referenciado nas rotas atribuídas
+// =============================================================================
+
+model Driver {
+  // — Identifiers
+  id     String @id @default(uuid())
+  userId String @unique
+
+  // — Data
+  licenseNumber String?
+  vehiclePlate  String?
+  vehicleModel  String?
+  active        Boolean @default(true)
+
+  // — Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // — Relations
+  user   User    @relation(fields: [userId], references: [id])
+  routes Route[]
+
+  @@map("drivers")
+}

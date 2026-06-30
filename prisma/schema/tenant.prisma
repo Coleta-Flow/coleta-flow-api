@@ -1,0 +1,2 @@
+// tenant.prisma — removido (single-tenant)
+// O conceito de Tenant foi eliminado. A plataforma opera com uma única empresa.

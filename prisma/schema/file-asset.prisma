@@ -1,0 +1,24 @@
+// =============================================================================
+// FileAsset — metadados de arquivos armazenados (fotos, PDFs)
+// Suporta storage local ou S3 via STORAGE_TYPE no .env.
+// entityType + entityId formam a referência polimórfica ao dono do arquivo.
+// =============================================================================
+
+model FileAsset {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Data
+  entityType String  // donor_request | declaration | ...
+  entityId   String
+  url        String
+  filename   String
+  sizeBytes  Int?
+  mimeType   String?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("file_assets")
+}

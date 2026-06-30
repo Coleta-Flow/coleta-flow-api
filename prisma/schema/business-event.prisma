@@ -1,0 +1,25 @@
+// =============================================================================
+// BusinessEvent — event store imutável de auditoria
+// Registra eventos de negócio com payload JSON. Imutável por design.
+// GPS frequente NÃO vai aqui (vai para Redis). Apenas transições de estado:
+// criação, aprovação, coleta, pesagem, declaração, cancelamento.
+// =============================================================================
+
+model BusinessEvent {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Data
+  entityType String
+  entityId   String
+  type       BusinessEventType
+  payload    Json
+
+  // — Timestamps
+  occurredAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([type])
+  @@index([occurredAt])
+  @@map("business_events")
+}

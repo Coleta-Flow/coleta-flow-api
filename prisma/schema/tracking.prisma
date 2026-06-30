@@ -1,0 +1,53 @@
+// =============================================================================
+// TrackingSession — sessão de rastreamento público por token UUID
+// Token salvo em Redis (TTL configurável) e nesta tabela (histórico).
+// Invalidada quando a rota finaliza: invalidatedAt preenchido + Redis DEL.
+// =============================================================================
+
+model TrackingSession {
+  // — Identifiers
+  id      String @id @default(uuid())
+  routeId String @unique
+  token   String @unique
+
+  // — Data
+  expiresAt     DateTime
+  invalidatedAt DateTime?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  // — Relations
+  route Route @relation(fields: [routeId], references: [id])
+
+  @@index([token])
+  @@map("tracking_sessions")
+}
+
+// =============================================================================
+// DriverLocationSnapshot — snapshot de GPS auditável
+// GPS frequente (4s) vai apenas para Redis. Este modelo recebe snapshots
+// a cada ~60s ou em eventos críticos (chegada, coleta, entrega).
+// =============================================================================
+
+model DriverLocationSnapshot {
+  // — Identifiers
+  id      String @id @default(uuid())
+  routeId String
+
+  // — Data
+  lat        Decimal  @db.Decimal(10, 8)
+  lng        Decimal  @db.Decimal(11, 8)
+  speed      Decimal? @db.Decimal(6, 2)
+  heading    Int?
+  accuracy   Decimal? @db.Decimal(6, 2)
+  battery    Int?
+  capturedAt DateTime
+
+  // — Relations
+  route Route @relation(fields: [routeId], references: [id])
+
+  @@index([routeId])
+  @@index([routeId, capturedAt])
+  @@map("driver_location_snapshots")
+}

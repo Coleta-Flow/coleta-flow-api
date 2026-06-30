@@ -1,0 +1,29 @@
+// =============================================================================
+// Declaration — declaração de recebimento de material (PDF com QR Code)
+// Gerada por DeclarationPdfFactory somente após WeightRecord confirmado.
+// validationToken → URL pública /verificar/:token para autenticar o PDF.
+// =============================================================================
+
+model Declaration {
+  // — Identifiers
+  id             String @id @default(uuid())
+  donorRequestId String @unique
+  weightRecordId String @unique
+
+  // — Data
+  code            String  @unique
+  pdfUrl          String?
+  validationToken String  @unique
+
+  // — Timestamps
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // — Relations
+  donorRequest DonorRequest @relation(fields: [donorRequestId], references: [id])
+  weightRecord WeightRecord @relation(fields: [weightRecordId], references: [id])
+
+  @@index([code])
+  @@index([validationToken])
+  @@map("declarations")
+}

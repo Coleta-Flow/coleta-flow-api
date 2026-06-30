@@ -1,0 +1,22 @@
+// =============================================================================
+// MaterialType — catálogo de tipos de material aceitos
+// =============================================================================
+
+model MaterialType {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Data
+  name        String
+  description String?
+  active      Boolean @default(true)
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // — Relations
+  donorRequests DonorRequest[]
+
+  @@map("material_types")
+}

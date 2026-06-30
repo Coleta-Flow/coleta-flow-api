@@ -1,0 +1,101 @@
+// =============================================================================
+// DonorRequest — solicitação de coleta criada pelo doador (pública, sem login)
+// Núcleo do fluxo operacional; possui máquina de estados via DonorRequestStatusVO
+// =============================================================================
+
+model DonorRequest {
+  // — Identifiers
+  id           String             @id @default(uuid())
+  trackingCode String             @unique
+  status       DonorRequestStatus @default(REQUESTED)
+
+  // — Dados do doador
+  donorName     String
+  donorWhatsapp String
+  donorEmail    String?
+
+  // — Localização
+  address String
+  city    String
+
+  // — Material
+  materialTypeId    String
+  description       String   @db.Text
+  estimatedWeightKg Decimal? @db.Decimal(10, 2)
+  bestTimeForPickup String
+
+  // — Notas internas
+  operatorNotes String?  @db.Text
+  cancelReason  String?
+
+  // — Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // — Relations
+  materialType   MaterialType        @relation(fields: [materialTypeId], references: [id])
+  photos         DonorRequestPhoto[]
+  pickupDecision PickupDecision?
+  route          Route?
+  weightRecord   WeightRecord?
+  declaration    Declaration?
+
+  @@index([status])
+  @@index([city])
+  @@index([trackingCode])
+  @@map("donor_requests")
+}
+
+// =============================================================================
+// DonorRequestPhoto — fotos dos materiais anexadas à solicitação
+// Armazenadas via FilesModule (local ou S3 via STORAGE_TYPE no .env)
+// =============================================================================
+
+model DonorRequestPhoto {
+  // — Identifiers
+  id             String @id @default(uuid())
+  donorRequestId String
+
+  // — Data
+  url       String
+  filename  String
+  sizeBytes Int?
+  mimeType  String?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  // — Relations
+  donorRequest DonorRequest @relation(fields: [donorRequestId], references: [id])
+
+  @@index([donorRequestId])
+  @@map("donor_request_photos")
+}
+
+// =============================================================================
+// PickupDecision — decisão do operador sobre a solicitação:
+//   willPickup=true  → aprovado para coleta por motorista
+//   willPickup=false → direcionado a ponto de coleta presencial
+// =============================================================================
+
+model PickupDecision {
+  // — Identifiers
+  id             String @id @default(uuid())
+  donorRequestId String @unique
+
+  // — Data
+  willPickup        Boolean
+  collectionPointId String?
+  decidedByUserId   String
+  notes             String?  @db.Text
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  // — Relations
+  donorRequest    DonorRequest     @relation(fields: [donorRequestId], references: [id])
+  collectionPoint CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+
+  @@map("pickup_decisions")
+}

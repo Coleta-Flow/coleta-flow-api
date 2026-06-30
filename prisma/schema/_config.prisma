@@ -1,0 +1,14 @@
+// =============================================================================
+// ColetaFlow — Configuração do Prisma Client
+// Multi-file schema: cada tabela em seu próprio arquivo em prisma/schema/
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}

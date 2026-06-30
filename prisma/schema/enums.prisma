@@ -1,0 +1,65 @@
+// =============================================================================
+// Enums — ColetaFlow
+// =============================================================================
+
+// Papéis de usuário — controla RBAC em todas as rotas da API
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DRIVER
+  COLLECTION_POINT_OPERATOR
+}
+
+// Ciclo de vida de uma solicitação de coleta
+// Pickup: REQUESTED → APPROVED_FOR_PICKUP → DRIVER_ASSIGNED → ... → FINISHED
+// Point:  REQUESTED → DIRECTED_TO_COLLECTION_POINT → ... → FINISHED
+enum DonorRequestStatus {
+  REQUESTED
+  UNDER_REVIEW
+  DIRECTED_TO_COLLECTION_POINT
+  WAITING_DROPOFF_AT_POINT
+  APPROVED_FOR_PICKUP
+  DRIVER_ASSIGNED
+  DRIVER_ON_THE_WAY
+  DRIVER_ARRIVED
+  COLLECTED
+  GOING_TO_COLLECTION_POINT
+  DELIVERED_TO_COLLECTION_POINT
+  WEIGHED
+  DECLARATION_AVAILABLE
+  FINISHED
+  CANCELLED
+}
+
+// Ciclo de vida de uma rota atribuída a um motorista
+enum RouteStatus {
+  PLANNED
+  ASSIGNED
+  IN_PROGRESS
+  ARRIVED_AT_DONOR
+  COLLECTED
+  GOING_TO_COLLECTION_POINT
+  ARRIVED_AT_COLLECTION_POINT
+  DELIVERED
+  WEIGHED
+  FINISHED
+  CANCELLED
+}
+
+// Tipos de evento auditáveis no event store (tabela business_events)
+enum BusinessEventType {
+  DONOR_REQUEST_CREATED
+  DONOR_REQUEST_REVIEWED
+  REQUEST_DIRECTED_TO_POINT
+  PICKUP_APPROVED
+  DRIVER_ASSIGNED_TO_ROUTE
+  ROUTE_STARTED
+  DRIVER_ARRIVED_AT_DONOR
+  MATERIAL_COLLECTED
+  DRIVER_ARRIVED_AT_COLLECTION_POINT
+  MATERIAL_DELIVERED_TO_COLLECTION_POINT
+  WEIGHT_REGISTERED
+  DECLARATION_GENERATED
+  ROUTE_FINISHED
+  REQUEST_CANCELLED
+}
