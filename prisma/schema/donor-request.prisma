@@ -9,7 +9,10 @@ model DonorRequest {
   trackingCode String             @unique
   status       DonorRequestStatus @default(REQUESTED)
 
-  // — Dados do doador
+  // — Referência ao doador (RF01)
+  donorId String?
+
+  // — Dados do doador (denormalizado para compatibilidade)
   donorName     String
   donorWhatsapp String
   donorEmail    String?
@@ -34,6 +37,7 @@ model DonorRequest {
   deletedAt DateTime?
 
   // — Relations
+  donor          Donor?              @relation(fields: [donorId], references: [id])
   materialType   MaterialType        @relation(fields: [materialTypeId], references: [id])
   photos         DonorRequestPhoto[]
   pickupDecision PickupDecision?

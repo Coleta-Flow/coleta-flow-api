@@ -9,19 +9,25 @@ export class ListDonorRequestsHandler implements IQueryHandler<ListDonorRequests
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: ListDonorRequestsQuery) {
-    const { status, city, page, limit } = query;
+    const { status, city, startDate, endDate, page, limit } = query;
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       deletedAt: null,
       ...(status ? { status: status as any } : {}),
       ...(city ? { city: { contains: city } } : {}),
     };
 
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.donorRequest.findMany({
         where,
-        include: { materialType: true, photos: true, pickupDecision: true },
+        include: { donor: true, materialType: true, photos: true, pickupDecision: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,

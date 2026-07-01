@@ -1,0 +1,46 @@
+// =============================================================================
+// Donor — pessoa física ou jurídica que solicita coletas
+// Entidade central para rastreamento de histórico por doador (RF01–RF05)
+// =============================================================================
+
+model Donor {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Identificação
+  name     String
+  cpfCnpj  String? @unique
+  email    String?
+  whatsapp String?
+  phone    String?
+
+  // — Endereço estruturado (RF01)
+  cep          String?
+  street       String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String
+  state        String?
+
+  // — Coordenadas geográficas (RF04)
+  lat Decimal? @db.Decimal(10, 8)
+  lng Decimal? @db.Decimal(11, 8)
+
+  // — Controle
+  active Boolean @default(true)
+
+  // — Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // — Relations
+  donorRequests DonorRequest[]
+
+  @@index([city])
+  @@index([cpfCnpj])
+  @@index([email])
+  @@index([whatsapp])
+  @@map("donors")
+}

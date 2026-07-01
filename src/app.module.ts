@@ -14,6 +14,8 @@ import { DeclarationsModule } from './modules/declarations/declarations.module';
 import { FilesModule } from './modules/files/files.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { EventStoreModule } from './modules/event-store/event-store.module';
+import { MaterialTypesModule } from './modules/material-types/material-types.module';
+import { DonorsModule } from './modules/donors/donor.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { EventStoreModule } from './modules/event-store/event-store.module';
     FilesModule,
     ReportsModule,
     EventStoreModule,
+    MaterialTypesModule,
+    DonorsModule,
   ],
 })
 export class AppModule {}

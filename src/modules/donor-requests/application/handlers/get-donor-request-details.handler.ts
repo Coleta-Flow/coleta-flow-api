@@ -12,6 +12,7 @@ export class GetDonorRequestDetailsHandler implements IQueryHandler<GetDonorRequ
     const request = await this.prisma.donorRequest.findUnique({
       where: { id: query.id },
       include: {
+        donor: true,
         materialType: true,
         photos: true,
         pickupDecision: { include: { collectionPoint: true } },
