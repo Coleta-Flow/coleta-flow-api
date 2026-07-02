@@ -478,6 +478,48 @@ export class RoutesService {
     });
   }
 
+  async listAvailableDemands(city?: string) {
+    const [demands, plannedRoutes] = await Promise.all([
+      this.prisma.donorRequest.findMany({
+        where: {
+          status: DonorRequestStatus.APPROVED_FOR_PICKUP,
+          deletedAt: null,
+          route: null,
+          ...(city ? { city } : {}),
+        },
+        include: { materialType: true, donor: true, pickupDecision: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.route.findMany({
+        where: {
+          status: RouteStatus.PLANNED,
+          driverId: null,
+          ...(city
+            ? {
+                donorRequest: { city },
+              }
+            : {}),
+        },
+        include: {
+          donorRequest: { include: { materialType: true } },
+          stops: { orderBy: { sequence: 'asc' } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    return { demands, plannedRoutes };
+  }
+
+  async acceptDemand(driverId: string, donorRequestId: string, collectionPointId?: string) {
+    await this.assertDriverAvailable(driverId);
+    return this.createRoute(donorRequestId, driverId, collectionPointId);
+  }
+
+  async acceptRoute(routeId: string, driverId: string) {
+    return this.assignDriver(routeId, driverId);
+  }
+
   async startRoute(routeId: string, driverId: string) {
     const route = await this.getRouteOrThrow(routeId);
 

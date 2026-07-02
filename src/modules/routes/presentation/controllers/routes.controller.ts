@@ -1,11 +1,10 @@
-import { Controller, Get, Post, Patch, Param, Body, Request, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Param, Body, Request, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { RoutesService } from '../../routes.service';
 import {
-  CreateRouteDto,
-  AssignDriverDto,
+  AcceptDemandDto,
   CancelRouteDto,
   SendLocationDto,
   DeliverToPointDto,
@@ -28,13 +27,20 @@ export class RoutesController {
     return this.routesService.findAll(driverId ?? undefined);
   }
 
-  @Post()
-  @Roles(UserRole.OPERATOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Create a new route from an approved donor request' })
-  @ApiResponse({ status: 201, description: 'Route created' })
-  @ApiResponse({ status: 404, description: 'Donor request not found' })
-  create(@Body() dto: CreateRouteDto) {
-    return this.routesService.createRoute(dto.donorRequestId, dto.driverId, dto.collectionPointId);
+  @Get('available-demands')
+  @Roles(UserRole.DRIVER)
+  @ApiOperation({ summary: 'List approved pickup demands and unassigned planned routes for the driver app' })
+  @ApiQuery({ name: 'city', required: false })
+  listAvailableDemands(@Query('city') city?: string) {
+    return this.routesService.listAvailableDemands(city);
+  }
+
+  @Post('accept-demand')
+  @Roles(UserRole.DRIVER)
+  @ApiOperation({ summary: 'Driver accepts an approved demand and creates an assigned route' })
+  @ApiResponse({ status: 201, description: 'Route created and assigned to the authenticated driver' })
+  acceptDemand(@Body() dto: AcceptDemandDto, @Request() req: any) {
+    return this.routesService.acceptDemand(req.user.driverId, dto.donorRequestId, dto.collectionPointId);
   }
 
   @Get(':id')
@@ -47,19 +53,18 @@ export class RoutesController {
     return this.routesService.getRouteById(id);
   }
 
-  @Patch(':id/assign-driver')
-  @Roles(UserRole.OPERATOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Assign (or reassign) a driver to a planned route' })
+  @Patch(':id/accept')
+  @Roles(UserRole.DRIVER)
+  @ApiOperation({ summary: 'Driver accepts an existing planned route without a driver' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: 200, description: 'Driver assigned' })
-  @ApiResponse({ status: 409, description: 'Driver already has an active route' })
-  assignDriver(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignDriverDto) {
-    return this.routesService.assignDriver(id, dto.driverId);
+  @ApiResponse({ status: 200, description: 'Route assigned to driver' })
+  acceptRoute(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
+    return this.routesService.acceptRoute(id, req.user.driverId);
   }
 
   @Patch(':id/start')
   @Roles(UserRole.DRIVER)
-  @ApiOperation({ summary: 'Start route (also functions as "accept route") — generates tracking token' })
+  @ApiOperation({ summary: 'Start route — generates tracking token' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Route started, tracking token returned' })
   @ApiResponse({ status: 409, description: 'Route is not in ASSIGNED status' })
