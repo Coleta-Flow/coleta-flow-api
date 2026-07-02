@@ -6,10 +6,7 @@ import { FilesService } from './files.service';
 import { PrismaModule } from '../../database/prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    MulterModule.register({ storage: memoryStorage() }),
-  ],
+  imports: [PrismaModule, MulterModule.register({ storage: memoryStorage() })],
   controllers: [FilesController],
   providers: [FilesService],
   exports: [FilesService],

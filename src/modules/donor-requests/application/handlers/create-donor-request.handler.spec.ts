@@ -73,9 +73,16 @@ describe('CreateDonorRequestHandler', () => {
     mockEventStore.save.mockResolvedValue(undefined);
 
     const command = new CreateDonorRequestCommand(
-      'Ana', '(11) 91111-2222', undefined,
-      'Av. Paulista, 1', 'São Paulo', 'mat-uuid',
-      'Eletrônicos', undefined, 'Manhã', [],
+      'Ana',
+      '(11) 91111-2222',
+      undefined,
+      'Av. Paulista, 1',
+      'São Paulo',
+      'mat-uuid',
+      'Eletrônicos',
+      undefined,
+      'Manhã',
+      [],
     );
 
     const result = await handler.execute(command);
@@ -94,17 +101,23 @@ describe('CreateDonorRequestHandler', () => {
     mockEventStore.save.mockResolvedValue(undefined);
 
     const command = new CreateDonorRequestCommand(
-      'Pedro', '(21) 98888-7777', 'pedro@email.com',
-      'Rua X, 10', 'Rio', 'mat-id', 'Móveis', 50, 'Noite', photoUrls,
+      'Pedro',
+      '(21) 98888-7777',
+      'pedro@email.com',
+      'Rua X, 10',
+      'Rio',
+      'mat-id',
+      'Móveis',
+      50,
+      'Noite',
+      photoUrls,
     );
 
     await handler.execute(command);
 
     expect(mockPrisma.donorRequestPhoto.createMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({ url: photoUrls[0] }),
-        ]),
+        data: expect.arrayContaining([expect.objectContaining({ url: photoUrls[0] })]),
       }),
     );
   });

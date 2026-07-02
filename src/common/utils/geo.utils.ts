@@ -1,11 +1,6 @@
 const EARTH_RADIUS_METERS = 6_371_000;
 
-export function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
 
   const dLat = toRad(lat2 - lat1);

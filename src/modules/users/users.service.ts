@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
@@ -13,9 +18,22 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: { deletedAt: null },
       select: {
-        id: true, name: true, email: true, role: true,
-        phone: true, active: true, createdAt: true,
-        driver: { select: { id: true, vehiclePlate: true, vehicleModel: true, licenseNumber: true, active: true } },
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        active: true,
+        createdAt: true,
+        driver: {
+          select: {
+            id: true,
+            vehiclePlate: true,
+            vehicleModel: true,
+            licenseNumber: true,
+            active: true,
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -25,8 +43,19 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: { role: UserRole.DRIVER, active: true, deletedAt: null },
       select: {
-        id: true, name: true, email: true, phone: true,
-        driver: { select: { id: true, vehiclePlate: true, vehicleModel: true, licenseNumber: true, active: true } },
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        driver: {
+          select: {
+            id: true,
+            vehiclePlate: true,
+            vehicleModel: true,
+            licenseNumber: true,
+            active: true,
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -36,9 +65,23 @@ export class UsersService {
     const user = await this.prisma.user.findFirst({
       where: { id, deletedAt: null },
       select: {
-        id: true, name: true, email: true, role: true,
-        phone: true, active: true, createdAt: true, updatedAt: true,
-        driver: { select: { id: true, vehiclePlate: true, vehicleModel: true, licenseNumber: true, active: true } },
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        driver: {
+          select: {
+            id: true,
+            vehiclePlate: true,
+            vehicleModel: true,
+            licenseNumber: true,
+            active: true,
+          },
+        },
       },
     });
     if (!user) throw new NotFoundException('Usuário não encontrado.');
@@ -58,7 +101,15 @@ export class UsersService {
         role: dto.role,
         phone: dto.phone,
       },
-      select: { id: true, name: true, email: true, role: true, phone: true, active: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        active: true,
+        createdAt: true,
+      },
     });
   }
 
@@ -73,7 +124,15 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: dto,
-      select: { id: true, name: true, email: true, role: true, phone: true, active: true, updatedAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        active: true,
+        updatedAt: true,
+      },
     });
   }
 

@@ -19,10 +19,7 @@ const commandHandlers = [
   DirectToCollectionPointHandler,
 ];
 
-const queryHandlers = [
-  ListDonorRequestsHandler,
-  GetDonorRequestDetailsHandler,
-];
+const queryHandlers = [ListDonorRequestsHandler, GetDonorRequestDetailsHandler];
 
 @Module({
   imports: [CqrsModule, EventStoreModule, PrismaModule],

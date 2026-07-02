@@ -29,7 +29,16 @@ export class CollectionPointsController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new collection point' })
   create(
-    @Body() body: { name: string; address: string; city: string; lat: number; lng: number; phone?: string; operatingHours?: string },
+    @Body()
+    body: {
+      name: string;
+      address: string;
+      city: string;
+      lat: number;
+      lng: number;
+      phone?: string;
+      operatingHours?: string;
+    },
   ) {
     return this.service.create(body);
   }

@@ -11,11 +11,7 @@ export class FilesService {
     private readonly config: ConfigService,
   ) {}
 
-  async uploadFile(
-    file: Express.Multer.File,
-    entityType: string,
-    entityId?: string,
-  ) {
+  async uploadFile(file: Express.Multer.File, entityType: string, entityId?: string) {
     const storageType = this.config.get<string>('STORAGE_TYPE', 'local');
     let url: string;
 

@@ -1,7 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString, IsOptional, IsEmail, IsNumber, MinLength, Matches,
-} from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNumber, MinLength, Matches } from 'class-validator';
 
 export class CreateDonorDto {
   @ApiProperty({ example: 'João Silva' })

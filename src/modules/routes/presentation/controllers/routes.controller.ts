@@ -1,10 +1,5 @@
-import {
-  Controller, Get, Post, Patch,
-  Param, Body, Request, ParseUUIDPipe,
-} from '@nestjs/common';
-import {
-  ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Param, Body, Request, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { RoutesService } from '../../routes.service';
@@ -44,10 +39,7 @@ export class RoutesController {
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Assign (or reassign) a driver to a planned route' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  assignDriver(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: AssignDriverDto,
-  ) {
+  assignDriver(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignDriverDto) {
     return this.routesService.assignDriver(id, dto.driverId);
   }
 
@@ -88,10 +80,7 @@ export class RoutesController {
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Cancel a route (PLANNED, ASSIGNED or IN_PROGRESS)' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  cancel(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: CancelRouteDto,
-  ) {
+  cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelRouteDto) {
     return this.routesService.cancelRoute(id, dto.reason);
   }
 
@@ -101,10 +90,14 @@ export class RoutesController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   sendLocation(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: {
-      lat: number; lng: number;
-      accuracy?: number; speed?: number;
-      heading?: number; battery?: number;
+    @Body()
+    body: {
+      lat: number;
+      lng: number;
+      accuracy?: number;
+      speed?: number;
+      heading?: number;
+      battery?: number;
     },
   ) {
     return this.routesService.sendLocation(id, body);

@@ -20,12 +20,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof DomainError) {
       const status =
-        exception.code === 'GEOFENCE_VIOLATION' ||
-        exception.code === 'TENANT_ACCESS_DENIED'
+        exception.code === 'GEOFENCE_VIOLATION' || exception.code === 'TENANT_ACCESS_DENIED'
           ? HttpStatus.FORBIDDEN
           : exception.code === 'TRACKING_TOKEN_EXPIRED'
-          ? HttpStatus.NOT_FOUND
-          : HttpStatus.UNPROCESSABLE_ENTITY;
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.UNPROCESSABLE_ENTITY;
 
       return response.status(status).json({
         statusCode: status,

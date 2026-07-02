@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Param,
-  Body,
-  Request,
-  ParseUUIDPipe,
-  Res,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { Controller, Post, Get, Param, Body, Request, ParseUUIDPipe, Res } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { UserRole } from '@prisma/client';
 import { CommandBus } from '@nestjs/cqrs';
@@ -39,7 +24,10 @@ export class DeclarationsController {
   @ApiOperation({ summary: 'Generate declaration PDF (requires weight record)' })
   @ApiResponse({ status: 201, description: 'Declaration generated' })
   @ApiResponse({ status: 422, description: 'WEIGHT_REQUIRED — no weight record found' })
-  @ApiResponse({ status: 422, description: 'DECLARATION_NOT_APPLICABLE — direct-to-point flow does not generate declarations' })
+  @ApiResponse({
+    status: 422,
+    description: 'DECLARATION_NOT_APPLICABLE — direct-to-point flow does not generate declarations',
+  })
   generate(@Body() body: { donorRequestId: string }, @Request() req: any) {
     return this.commandBus.execute(
       new GenerateDeclarationCommand(body.donorRequestId, req.user.id),
@@ -73,10 +61,7 @@ export class DeclarationsController {
   @Roles(UserRole.OPERATOR, UserRole.ADMIN, UserRole.COLLECTION_POINT_OPERATOR)
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiOperation({ summary: 'Download declaration PDF' })
-  async download(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
-  ) {
+  async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const declaration = await this.prisma.declaration.findFirst({
       where: { id },
     });

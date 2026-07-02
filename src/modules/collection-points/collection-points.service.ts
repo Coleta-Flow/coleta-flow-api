@@ -17,8 +17,13 @@ export class CollectionPointsService {
   }
 
   create(data: {
-    name: string; address: string; city: string;
-    lat: number; lng: number; phone?: string; operatingHours?: string;
+    name: string;
+    address: string;
+    city: string;
+    lat: number;
+    lng: number;
+    phone?: string;
+    operatingHours?: string;
   }) {
     return this.prisma.collectionPoint.create({ data });
   }

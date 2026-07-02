@@ -20,7 +20,9 @@ export class CreateDonorRequestDto {
 
   @ApiProperty({ example: '(85) 99999-0000', description: 'WhatsApp com DDD' })
   @IsString()
-  @Matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, { message: 'WhatsApp deve estar no formato (DD) NNNNN-NNNN' })
+  @Matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, {
+    message: 'WhatsApp deve estar no formato (DD) NNNNN-NNNN',
+  })
   whatsapp: string;
 
   @ApiPropertyOptional({ example: 'joao@email.com' })
@@ -56,7 +58,10 @@ export class CreateDonorRequestDto {
   @IsString()
   bestTimeForPickup: string;
 
-  @ApiPropertyOptional({ example: ['uuid-foto-1', 'uuid-foto-2'], description: 'IDs dos arquivos enviados via /files/upload/public (RF07)' })
+  @ApiPropertyOptional({
+    example: ['uuid-foto-1', 'uuid-foto-2'],
+    description: 'IDs dos arquivos enviados via /files/upload/public (RF07)',
+  })
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })

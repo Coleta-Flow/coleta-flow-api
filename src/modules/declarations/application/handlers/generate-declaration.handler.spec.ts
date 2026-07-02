@@ -16,9 +16,7 @@ const mockPdfFactory = {
 const mockEventStore = { save: jest.fn() };
 
 // Isolated business logic function (extracted from handler for testability)
-async function validateAndGenerateDeclaration(
-  donorRequestId: string,
-) {
+async function validateAndGenerateDeclaration(donorRequestId: string) {
   const request = await mockPrisma.donorRequest.findUnique({ where: { id: donorRequestId } });
   if (!request) throw new Error('Solicitação não encontrada.');
 
@@ -33,21 +31,22 @@ describe('GenerateDeclarationHandler — business rules', () => {
 
   it('should throw WeightRequiredError when no weight record exists', async () => {
     mockPrisma.donorRequest.findUnique.mockResolvedValue({
-      id: 'req-id', status: DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT,
+      id: 'req-id',
+      status: DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT,
     });
     mockPrisma.weightRecord.findUnique.mockResolvedValue(null);
 
-    await expect(validateAndGenerateDeclaration('req-id')).rejects.toThrow(
-      WeightRequiredError,
-    );
+    await expect(validateAndGenerateDeclaration('req-id')).rejects.toThrow(WeightRequiredError);
   });
 
   it('should proceed when weight is confirmed', async () => {
     mockPrisma.donorRequest.findUnique.mockResolvedValue({
-      id: 'req-id', status: DonorRequestStatus.WEIGHED,
+      id: 'req-id',
+      status: DonorRequestStatus.WEIGHED,
     });
     mockPrisma.weightRecord.findUnique.mockResolvedValue({
-      id: 'weight-id', weightKg: 12.5,
+      id: 'weight-id',
+      weightKg: 12.5,
     });
 
     const weight = await validateAndGenerateDeclaration('req-id');

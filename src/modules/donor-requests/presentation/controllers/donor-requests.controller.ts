@@ -71,7 +71,11 @@ export class DonorRequestsController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
   @ApiQuery({ name: 'city', required: false, description: 'Filter by city (partial match)' })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date (ISO string)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Filter by start date (ISO string)',
+  })
   @ApiQuery({ name: 'endDate', required: false, description: 'Filter by end date (ISO string)' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 20)' })
@@ -105,9 +109,7 @@ export class DonorRequestsController {
   @ApiResponse({ status: 200, description: 'Request approved for pickup' })
   @ApiResponse({ status: 422, description: 'INVALID_STATUS_TRANSITION' })
   approvePickup(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    return this.commandBus.execute(
-      new ApproveForPickupCommand(id, req.user.id),
-    );
+    return this.commandBus.execute(new ApproveForPickupCommand(id, req.user.id));
   }
 
   @Patch('donor-requests/:id/direct-to-point')
@@ -121,12 +123,7 @@ export class DonorRequestsController {
     @Request() req: any,
   ) {
     return this.commandBus.execute(
-      new DirectToCollectionPointCommand(
-        id,
-        body.collectionPointId,
-        req.user.id,
-        body.notes,
-      ),
+      new DirectToCollectionPointCommand(id, body.collectionPointId, req.user.id, body.notes),
     );
   }
 
@@ -137,10 +134,7 @@ export class DonorRequestsController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Request updated' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateDonorRequestDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDonorRequestDto) {
     return this.commandBus.execute(
       new UpdateDonorRequestCommand(
         id,
@@ -160,12 +154,7 @@ export class DonorRequestsController {
   @ApiResponse({ status: 200, description: 'Request cancelled' })
   @ApiResponse({ status: 400, description: 'Invalid status transition' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  cancel(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: CancelDonorRequestDto,
-  ) {
-    return this.commandBus.execute(
-      new CancelDonorRequestCommand(id, dto.reason),
-    );
+  cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelDonorRequestDto) {
+    return this.commandBus.execute(new CancelDonorRequestCommand(id, dto.reason));
   }
 }

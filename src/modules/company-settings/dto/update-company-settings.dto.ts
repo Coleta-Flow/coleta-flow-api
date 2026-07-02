@@ -22,7 +22,9 @@ export class UpdateCompanySettingsDto {
   @IsHexColor()
   accentColor?: string;
 
-  @ApiPropertyOptional({ example: 'Este documento é gerado automaticamente pelo sistema EcoLogi...' })
+  @ApiPropertyOptional({
+    example: 'Este documento é gerado automaticamente pelo sistema EcoLogi...',
+  })
   @IsOptional()
   @IsString()
   legalText?: string;

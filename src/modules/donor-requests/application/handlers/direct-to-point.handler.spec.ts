@@ -32,14 +32,16 @@ describe('DirectToCollectionPointHandler', () => {
 
   it('should direct request to collection point successfully', async () => {
     mockPrisma.donorRequest.findUnique.mockResolvedValue({
-      id: 'req-id', status: DonorRequestStatus.UNDER_REVIEW,
+      id: 'req-id',
+      status: DonorRequestStatus.UNDER_REVIEW,
     });
     mockPrisma.collectionPoint.findUnique.mockResolvedValue({
       id: 'point-id',
     });
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
       mockPrisma.donorRequest.update.mockResolvedValue({
-        id: 'req-id', status: DonorRequestStatus.DIRECTED_TO_COLLECTION_POINT,
+        id: 'req-id',
+        status: DonorRequestStatus.DIRECTED_TO_COLLECTION_POINT,
       });
       mockPrisma.pickupDecision.create.mockResolvedValue({});
       return fn(mockPrisma);
@@ -47,7 +49,10 @@ describe('DirectToCollectionPointHandler', () => {
     mockEventStore.save.mockResolvedValue(undefined);
 
     const command = new DirectToCollectionPointCommand(
-      'req-id', 'point-id', 'op-id', 'Levar na segunda-feira',
+      'req-id',
+      'point-id',
+      'op-id',
+      'Levar na segunda-feira',
     );
     const result = await handler.execute(command);
 

@@ -9,7 +9,10 @@ import {
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { TrackingRedisService, DriverLocationPayload } from '../../infrastructure/redis/tracking-redis.service';
+import {
+  TrackingRedisService,
+  DriverLocationPayload,
+} from '../../infrastructure/redis/tracking-redis.service';
 import { WsJwtGuard } from '../guards/ws-jwt.guard';
 
 @WebSocketGateway({ namespace: '/tracking', cors: { origin: '*' } })
@@ -36,7 +39,10 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (data.token) {
       const session = await this.trackingRedis.getTrackingSession(data.token);
       if (!session) {
-        client.emit('error', { code: 'TRACKING_TOKEN_EXPIRED', message: 'Token inválido ou expirado.' });
+        client.emit('error', {
+          code: 'TRACKING_TOKEN_EXPIRED',
+          message: 'Token inválido ou expirado.',
+        });
         return;
       }
       client.join(`tracking:${data.token}`);
@@ -58,7 +64,10 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Valida que o motorista só envia localização para sua própria rota
     if (socketUser?.sub && payload.driverId && socketUser.sub !== payload.driverId) {
-      client.emit('error', { code: 'FORBIDDEN', message: 'Você não pode enviar localização para outro motorista.' });
+      client.emit('error', {
+        code: 'FORBIDDEN',
+        message: 'Você não pode enviar localização para outro motorista.',
+      });
       return;
     }
 

@@ -35,7 +35,16 @@ export class FilesController {
   @UseInterceptors(FileInterceptor('file', { storage: undefined }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload a file (authenticated)' })
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' }, entityType: { type: 'string' }, entityId: { type: 'string' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        entityType: { type: 'string' },
+        entityId: { type: 'string' },
+      },
+    },
+  })
   @ApiQuery({ name: 'entityType', required: false })
   @ApiQuery({ name: 'entityId', required: false })
   upload(
@@ -59,7 +68,15 @@ export class FilesController {
   @UseInterceptors(FileInterceptor('file', { storage: undefined }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload a photo for a public donor request (no login required)' })
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' }, entityId: { type: 'string', description: 'donor_request id' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        entityId: { type: 'string', description: 'donor_request id' },
+      },
+    },
+  })
   @ApiQuery({ name: 'entityId', required: false })
   uploadPublic(
     @UploadedFile(

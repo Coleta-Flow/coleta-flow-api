@@ -7,7 +7,10 @@ import { DeclarationPdfFactory } from '../../infrastructure/pdf/declaration-pdf.
 import { EventStoreService } from '../../../event-store/event-store.service';
 import { EmailService } from '../../../notifications/email.service';
 import { GenerateDeclarationCommand } from '../commands/generate-declaration.command';
-import { WeightRequiredError, DeclarationNotApplicableError } from '../../../../common/errors/domain.errors';
+import {
+  WeightRequiredError,
+  DeclarationNotApplicableError,
+} from '../../../../common/errors/domain.errors';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -77,7 +80,11 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
       weightKg: Number(weightRecord.netWeightKg),
       collectionDate: weightRecord.createdAt,
       collectionPoint: collectionPoint
-        ? { name: collectionPoint.name, address: collectionPoint.address, city: collectionPoint.city }
+        ? {
+            name: collectionPoint.name,
+            address: collectionPoint.address,
+            city: collectionPoint.city,
+          }
         : { name: 'Ponto de coleta', address: donorRequest.address, city: donorRequest.city },
       driver: donorRequest.route?.driver
         ? {

@@ -9,13 +9,7 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -57,10 +51,7 @@ export class MaterialTypesController {
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Update a material type' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateMaterialTypeDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateMaterialTypeDto) {
     return this.service.update(id, dto);
   }
 

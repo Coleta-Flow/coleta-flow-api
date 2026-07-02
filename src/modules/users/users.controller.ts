@@ -1,11 +1,16 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, ParseUUIDPipe, Request,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  Request,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UsersService } from './users.service';
@@ -42,13 +47,21 @@ export class UsersController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
-  @ApiOperation({ summary: 'Create a new user (ADMIN: any role, OPERATOR: DRIVER/COLLECTION_POINT only)' })
+  @ApiOperation({
+    summary: 'Create a new user (ADMIN: any role, OPERATOR: DRIVER/COLLECTION_POINT only)',
+  })
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   create(@Body() dto: CreateUserDto, @Request() req: any) {
     const requesterRole = req.user?.role;
-    if (requesterRole === UserRole.OPERATOR && dto.role !== UserRole.DRIVER && dto.role !== UserRole.COLLECTION_POINT_OPERATOR) {
-      throw new UnauthorizedException('Operadores só podem criar motoristas ou operadores de ponto de coleta.');
+    if (
+      requesterRole === UserRole.OPERATOR &&
+      dto.role !== UserRole.DRIVER &&
+      dto.role !== UserRole.COLLECTION_POINT_OPERATOR
+    ) {
+      throw new UnauthorizedException(
+        'Operadores só podem criar motoristas ou operadores de ponto de coleta.',
+      );
     }
     return this.usersService.create(dto);
   }
@@ -57,10 +70,7 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update user data (name, email, phone, role)' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 

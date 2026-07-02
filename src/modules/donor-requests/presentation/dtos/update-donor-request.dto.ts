@@ -1,11 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsNumber, IsOptional, IsPositive, IsString, MinLength } from 'class-validator';
 
 export class UpdateDonorRequestDto {
   @ApiPropertyOptional({ example: 'Caixas de papelão e garrafas PET' })

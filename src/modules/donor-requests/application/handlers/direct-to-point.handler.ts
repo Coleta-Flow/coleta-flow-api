@@ -8,9 +8,7 @@ import { DonorRequestStatusVO } from '../../domain/value-objects/donor-request-s
 
 @CommandHandler(DirectToCollectionPointCommand)
 @Injectable()
-export class DirectToCollectionPointHandler
-  implements ICommandHandler<DirectToCollectionPointCommand>
-{
+export class DirectToCollectionPointHandler implements ICommandHandler<DirectToCollectionPointCommand> {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventStore: EventStoreService,

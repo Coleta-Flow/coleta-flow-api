@@ -118,13 +118,18 @@ export class DeclarationPdfFactory {
       doc.moveDown();
       this.renderSection(doc, 'PONTO DE COLETA');
       this.renderField(doc, 'Nome', data.collectionPoint.name);
-      this.renderField(doc, 'Endereço', `${data.collectionPoint.address} — ${data.collectionPoint.city}`);
+      this.renderField(
+        doc,
+        'Endereço',
+        `${data.collectionPoint.address} — ${data.collectionPoint.city}`,
+      );
 
       if (data.driver) {
         doc.moveDown();
         this.renderSection(doc, 'MOTORISTA / COLETOR');
         this.renderField(doc, 'Nome', data.driver.name);
-        if (data.driver.vehiclePlate) this.renderField(doc, 'Placa do Veículo', data.driver.vehiclePlate);
+        if (data.driver.vehiclePlate)
+          this.renderField(doc, 'Placa do Veículo', data.driver.vehiclePlate);
       }
 
       // QR Code
@@ -140,7 +145,8 @@ export class DeclarationPdfFactory {
         .fontSize(8)
         .fillColor('#94A3B8')
         .text(
-          this.legalText ?? `Este documento é gerado automaticamente pelo sistema ${this.companyName}. A autenticidade pode ser verificada pelo QR Code acima.`,
+          this.legalText ??
+            `Este documento é gerado automaticamente pelo sistema ${this.companyName}. A autenticidade pode ser verificada pelo QR Code acima.`,
           { align: 'center' },
         );
 
@@ -163,7 +169,11 @@ export class DeclarationPdfFactory {
   }
 
   private renderField(doc: PDFKit.PDFDocument, label: string, value: string): void {
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('#334155').text(`${label}: `, { continued: true });
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#334155')
+      .text(`${label}: `, { continued: true });
     doc.font('Helvetica').fillColor('#0F172A').text(value);
   }
 
