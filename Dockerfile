@@ -33,6 +33,9 @@ COPY package.json yarn.lock ./
 
 RUN mkdir -p uploads
 
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3333
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

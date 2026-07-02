@@ -114,6 +114,7 @@ wss://sua-api.up.railway.app/tracking
 | Redis connection refused | Use `REDIS_URL` do plugin ou referências `${{Redis.*}}` |
 | Uploads sumindo | Migre para `STORAGE_TYPE=s3` |
 | Prisma OpenSSL / `Error load` no deploy | Dockerfile usa `node:22-bookworm-slim` + `openssl`; regenere client após mudar `binaryTargets` |
+| Health check `service unavailable` | `/health` é público (sem JWT); use `/health/ready` para testar DB; confira `PORT`, `APP_URL` e `API_URL` como URI válida |
 
 ## Arquivos relevantes
 

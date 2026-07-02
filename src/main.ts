@@ -57,4 +57,7 @@ async function bootstrap() {
   console.log(`Scalar docs: /docs`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to start EcoLogi API:', error);
+  process.exit(1);
+});
