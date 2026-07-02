@@ -32,6 +32,7 @@ coverage/
 .prettiercache
 .tsbuildinfo
 tsconfig.tsbuildinfo
+tsconfig.build.tsbuildinfo
 
 # macOS
 .DS_Store
