@@ -4,6 +4,9 @@
   "description": "EcoLogi API — NestJS backend for collection management platform",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -35,7 +38,7 @@
     "@nestjs/swagger": "^7.3.0",
     "@nestjs/websockets": "^10.3.0",
     "@prisma/client": "^5.22.0",
-    "@scalar/nestjs-api-reference": "^1.2.7",
+    "@scalar/nestjs-api-reference": "1.2.7",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
