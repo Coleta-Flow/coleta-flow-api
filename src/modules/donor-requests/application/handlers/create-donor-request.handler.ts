@@ -61,12 +61,18 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
         },
       });
 
-      if (command.photoUrls.length > 0) {
+      if (command.photoIds.length > 0) {
+        const fileAssets = await tx.fileAsset.findMany({
+          where: { id: { in: command.photoIds } },
+        });
+
         await tx.donorRequestPhoto.createMany({
-          data: command.photoUrls.map((url) => ({
+          data: fileAssets.map((fa) => ({
             donorRequestId: donorRequest.id,
-            url,
-            filename: url.split('/').pop() ?? 'photo',
+            url: fa.url,
+            filename: fa.filename,
+            sizeBytes: fa.sizeBytes ?? undefined,
+            mimeType: fa.mimeType ?? undefined,
           })),
         });
       }

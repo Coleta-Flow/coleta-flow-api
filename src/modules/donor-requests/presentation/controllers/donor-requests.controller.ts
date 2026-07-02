@@ -57,7 +57,7 @@ export class DonorRequestsController {
         dto.description,
         dto.estimatedWeightKg,
         dto.bestTimeForPickup,
-        [],
+        dto.photoIds ?? [],
       ),
     );
   }

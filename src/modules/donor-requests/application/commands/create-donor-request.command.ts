@@ -9,6 +9,6 @@ export class CreateDonorRequestCommand {
     public readonly description: string,
     public readonly estimatedWeightKg: number | undefined,
     public readonly bestTimeForPickup: string,
-    public readonly photoUrls: string[],
+    public readonly photoIds: string[],
   ) {}
 }

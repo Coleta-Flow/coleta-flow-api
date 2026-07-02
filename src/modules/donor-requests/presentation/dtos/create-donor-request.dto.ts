@@ -8,6 +8,8 @@ import {
   IsPositive,
   MinLength,
   Matches,
+  IsArray,
+  ArrayMinSize,
 } from 'class-validator';
 
 export class CreateDonorRequestDto {
@@ -53,4 +55,11 @@ export class CreateDonorRequestDto {
   @ApiProperty({ example: 'Tarde, após as 14h' })
   @IsString()
   bestTimeForPickup: string;
+
+  @ApiPropertyOptional({ example: ['uuid-foto-1', 'uuid-foto-2'], description: 'IDs dos arquivos enviados via /files/upload/public (RF07)' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayMinSize(0)
+  photoIds?: string[];
 }

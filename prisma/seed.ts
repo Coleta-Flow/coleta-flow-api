@@ -124,14 +124,14 @@ async function main() {
   // =========================================================================
 
   const materialTypes = [
-    { name: 'Papel e papelão', description: 'Jornais, revistas, caixas de papelão, folhas de papel' },
-    { name: 'Plástico', description: 'Garrafas PET, embalagens plásticas, sacos' },
-    { name: 'Vidro', description: 'Garrafas, potes, frascos de vidro' },
-    { name: 'Metal', description: 'Latas de alumínio, ferragens, cobre' },
-    { name: 'Eletrônicos', description: 'Computadores, celulares, pilhas, baterias' },
-    { name: 'Óleo de cozinha', description: 'Óleo vegetal usado' },
-    { name: 'Madeira', description: 'Móveis, pallets, sobras de madeira' },
-    { name: 'Orgânico', description: 'Restos de alimentos, cascas, podas de jardinagem' },
+    { name: 'Papel e papelão', description: 'Jornais, revistas, caixas de papelão, folhas de papel', unitOfMeasure: 'kg' },
+    { name: 'Plástico', description: 'Garrafas PET, embalagens plásticas, sacos', unitOfMeasure: 'kg' },
+    { name: 'Vidro', description: 'Garrafas, potes, frascos de vidro', unitOfMeasure: 'kg' },
+    { name: 'Metal', description: 'Latas de alumínio, ferragens, cobre', unitOfMeasure: 'kg' },
+    { name: 'Eletrônicos', description: 'Computadores, celulares, pilhas, baterias', unitOfMeasure: 'un' },
+    { name: 'Óleo de cozinha', description: 'Óleo vegetal usado', unitOfMeasure: 'l' },
+    { name: 'Madeira', description: 'Móveis, pallets, sobras de madeira', unitOfMeasure: 'kg' },
+    { name: 'Orgânico', description: 'Restos de alimentos, cascas, podas de jardinagem', unitOfMeasure: 'kg' },
   ];
 
   const materialTypeRecords: Record<string, string> = {};
