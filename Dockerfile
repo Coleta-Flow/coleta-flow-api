@@ -2,10 +2,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json yarn.lock ./
 COPY prisma ./prisma/
 
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 COPY . .
 
@@ -16,10 +16,14 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
-COPY package.json ./
+COPY package.json yarn.lock ./
+
+RUN mkdir -p uploads
 
 EXPOSE 3333
 

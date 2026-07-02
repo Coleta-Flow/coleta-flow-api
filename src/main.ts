@@ -25,8 +25,14 @@ async function bootstrap() {
     }),
   );
 
+  const corsOrigins = config
+    .get<string>('CORS_ORIGINS', '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: config.get('APP_URL'),
+    origin: corsOrigins.length > 0 ? corsOrigins : config.get('APP_URL'),
     credentials: true,
   });
 
@@ -44,10 +50,11 @@ async function bootstrap() {
   setupSwagger(app);
 
   const port = config.get<number>('PORT', 3333);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`EcoLogi API running on http://localhost:${port}`);
-  console.log(`Scalar docs: http://localhost:${port}/docs`);
+  console.log(`EcoLogi API running on port ${port}`);
+  console.log(`Health: /health`);
+  console.log(`Scalar docs: /docs`);
 }
 
 bootstrap();

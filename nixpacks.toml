@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "yarn"]
+
+[phases.install]
+cmds = ["yarn install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["npx prisma generate", "yarn build"]
+
+[start]
+cmd = "npx prisma migrate deploy && node dist/main"
