@@ -6,8 +6,10 @@ import { EventStoreService } from '../../../event-store/event-store.service';
 
 const mockPrisma = {
   $transaction: jest.fn(),
+  donor: { findFirst: jest.fn(), create: jest.fn() },
   donorRequest: { create: jest.fn() },
   donorRequestPhoto: { createMany: jest.fn() },
+  fileAsset: { findMany: jest.fn() },
 };
 
 const mockEventStore = {
@@ -34,9 +36,15 @@ describe('CreateDonorRequestHandler', () => {
   it('should create a donor request without login and return trackingCode', async () => {
     const createdRequest = { id: 'req-uuid', trackingCode: 'CF-ABC123' };
 
+    const mockTx = {
+      donor: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'donor-1' }) },
+      donorRequest: { create: jest.fn() },
+      donorRequestPhoto: { createMany: jest.fn() },
+      fileAsset: { findMany: jest.fn() },
+    };
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
-      mockPrisma.donorRequest.create.mockResolvedValue(createdRequest);
-      return fn(mockPrisma);
+      mockTx.donorRequest.create.mockResolvedValue(createdRequest);
+      return fn(mockTx);
     });
     mockEventStore.save.mockResolvedValue(undefined);
 
@@ -66,9 +74,15 @@ describe('CreateDonorRequestHandler', () => {
   it('should create a donor request with all fields', async () => {
     const createdRequest = { id: 'req-uuid', trackingCode: 'CF-XYZ' };
 
+    const mockTx = {
+      donor: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'donor-1' }) },
+      donorRequest: { create: jest.fn() },
+      donorRequestPhoto: { createMany: jest.fn() },
+      fileAsset: { findMany: jest.fn() },
+    };
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
-      mockPrisma.donorRequest.create.mockResolvedValue(createdRequest);
-      return fn(mockPrisma);
+      mockTx.donorRequest.create.mockResolvedValue(createdRequest);
+      return fn(mockTx);
     });
     mockEventStore.save.mockResolvedValue(undefined);
 
@@ -92,11 +106,20 @@ describe('CreateDonorRequestHandler', () => {
   it('should create photos when photoUrls are provided', async () => {
     const createdRequest = { id: 'req-uuid', trackingCode: 'CF-PH1' };
     const photoUrls = ['http://storage/photo1.jpg', 'http://storage/photo2.jpg'];
+    const createManyPhotos = jest.fn().mockResolvedValue({ count: 2 });
 
+    const mockTx = {
+      donor: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'donor-1' }) },
+      donorRequest: { create: jest.fn() },
+      donorRequestPhoto: { createMany: createManyPhotos },
+      fileAsset: { findMany: jest.fn().mockResolvedValue([
+        { id: 'fa-1', url: photoUrls[0], filename: 'photo1.jpg', sizeBytes: null, mimeType: null },
+        { id: 'fa-2', url: photoUrls[1], filename: 'photo2.jpg', sizeBytes: null, mimeType: null },
+      ]) },
+    };
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
-      mockPrisma.donorRequest.create.mockResolvedValue(createdRequest);
-      mockPrisma.donorRequestPhoto.createMany.mockResolvedValue({ count: 2 });
-      return fn(mockPrisma);
+      mockTx.donorRequest.create.mockResolvedValue(createdRequest);
+      return fn(mockTx);
     });
     mockEventStore.save.mockResolvedValue(undefined);
 
@@ -115,7 +138,7 @@ describe('CreateDonorRequestHandler', () => {
 
     await handler.execute(command);
 
-    expect(mockPrisma.donorRequestPhoto.createMany).toHaveBeenCalledWith(
+    expect(createManyPhotos).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.arrayContaining([expect.objectContaining({ url: photoUrls[0] })]),
       }),
