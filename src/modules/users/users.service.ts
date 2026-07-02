@@ -21,7 +21,7 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         phone: true,
         active: true,
         createdAt: true,
@@ -41,7 +41,11 @@ export class UsersService {
 
   findDrivers() {
     return this.prisma.user.findMany({
-      where: { role: UserRole.DRIVER, active: true, deletedAt: null },
+      where: {
+        roleRel: { name: UserRole.DRIVER },
+        active: true,
+        deletedAt: null,
+      },
       select: {
         id: true,
         name: true,
@@ -68,7 +72,7 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         phone: true,
         active: true,
         createdAt: true,
@@ -92,6 +96,9 @@ export class UsersService {
     const existing = await this.prisma.user.findFirst({ where: { email: dto.email } });
     if (existing) throw new ConflictException('E-mail já está em uso.');
 
+    const role = await this.prisma.role.findUnique({ where: { name: dto.role } });
+    if (!role) throw new NotFoundException('Role não encontrada.');
+
     const hashed = await bcrypt.hash(dto.password, 10);
     return this.prisma.user.create({
       data: {
@@ -99,13 +106,14 @@ export class UsersService {
         email: dto.email,
         password: hashed,
         role: dto.role,
+        roleId: role.id,
         phone: dto.phone,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         phone: true,
         active: true,
         createdAt: true,
@@ -121,14 +129,22 @@ export class UsersService {
       });
       if (existing) throw new ConflictException('E-mail já está em uso por outro usuário.');
     }
+
+    const data: any = { ...dto };
+    if (dto.role) {
+      const role = await this.prisma.role.findUnique({ where: { name: dto.role } });
+      if (!role) throw new NotFoundException('Role não encontrada.');
+      data.roleId = role.id;
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: dto,
+      data,
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         phone: true,
         active: true,
         updatedAt: true,

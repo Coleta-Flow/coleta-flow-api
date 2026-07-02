@@ -1064,6 +1064,50 @@
   dependencies:
     "@prisma/debug" "5.22.0"
 
+"@scalar/client-side-rendering@0.3.0":
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/@scalar/client-side-rendering/-/client-side-rendering-0.3.0.tgz"
+  integrity sha512-FFpLokNEyKvpKAJesa+eDh+2e+4qdhoexAJp6alhhxUA6SGqhDfTIV4P+0nZBMdMD6WPu4YeVJHa1hRrGKUVMA==
+  dependencies:
+    "@scalar/schemas" "0.7.0"
+    "@scalar/types" "0.16.0"
+    "@scalar/validation" "0.6.0"
+
+"@scalar/helpers@0.9.0":
+  version "0.9.0"
+  resolved "https://registry.npmjs.org/@scalar/helpers/-/helpers-0.9.0.tgz"
+  integrity sha512-M34CLRCttqC1bXthI/QSzQj0s5C6nrU2PFWf/vOT3RpycbiGDGQbqR+5RfFzpOIQvRqbHfNdcRbeiZBw+vCbkQ==
+
+"@scalar/nestjs-api-reference@^1.2.7":
+  version "1.2.7"
+  resolved "https://registry.npmjs.org/@scalar/nestjs-api-reference/-/nestjs-api-reference-1.2.7.tgz"
+  integrity sha512-sQr3BboIG+dwgcFoSBZLuBb1KPdzD8FYmL1bEqR5EVnAVQrMAOiJhbPoOBqYO+ku/SselS9Vx03nQckGr+w+tg==
+  dependencies:
+    "@scalar/client-side-rendering" "0.3.0"
+
+"@scalar/schemas@0.7.0":
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/@scalar/schemas/-/schemas-0.7.0.tgz"
+  integrity sha512-Roj0e7S29yTbGojwdx/b8C1H5arVN4h/VSPrtQ5vb9NT2ZAbrfPQVmpQYrF845rKOWX7kSzIvyBwrKNEMIAkxA==
+  dependencies:
+    "@scalar/helpers" "0.9.0"
+    "@scalar/validation" "0.6.0"
+
+"@scalar/types@0.16.0":
+  version "0.16.0"
+  resolved "https://registry.npmjs.org/@scalar/types/-/types-0.16.0.tgz"
+  integrity sha512-26OSrvZjKWZ7F236wWmJajBGDVFJuvXFJqKPFqbt/PxlgZKXQXfJsZorASRQmdNogT576nxYalQ7oaYWEnQwfw==
+  dependencies:
+    "@scalar/helpers" "0.9.0"
+    nanoid "^5.1.6"
+    type-fest "^5.3.1"
+    zod "^4.3.5"
+
+"@scalar/validation@0.6.0":
+  version "0.6.0"
+  resolved "https://registry.npmjs.org/@scalar/validation/-/validation-0.6.0.tgz"
+  integrity sha512-tpmmG+/xRE2Kn9RpflU3AIyZv08v10+E1ZrJCx7z6+/91zHVxy0M73kC1LT4/8PbYNt85ywyC8+n+D99JdMcGA==
+
 "@sideway/address@^4.1.5":
   version "4.1.5"
   resolved "https://registry.npmjs.org/@sideway/address/-/address-4.1.5.tgz"
@@ -5070,6 +5114,11 @@ mute-stream@1.0.0:
   resolved "https://registry.npmjs.org/mute-stream/-/mute-stream-1.0.0.tgz"
   integrity sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==
 
+nanoid@^5.1.6:
+  version "5.1.16"
+  resolved "https://registry.npmjs.org/nanoid/-/nanoid-5.1.16.tgz"
+  integrity sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==
+
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
@@ -6288,6 +6337,11 @@ synckit@^0.11.13:
   dependencies:
     "@pkgr/core" "^0.3.6"
 
+tagged-tag@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/tagged-tag/-/tagged-tag-1.0.0.tgz"
+  integrity sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==
+
 tapable@^2.1.1, tapable@^2.2.1, tapable@^2.3.3:
   version "2.3.3"
   resolved "https://registry.npmjs.org/tapable/-/tapable-2.3.3.tgz"
@@ -6488,6 +6542,13 @@ type-fest@^4.41.0:
   version "4.41.0"
   resolved "https://registry.npmjs.org/type-fest/-/type-fest-4.41.0.tgz"
   integrity sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==
+
+type-fest@^5.3.1:
+  version "5.7.0"
+  resolved "https://registry.npmjs.org/type-fest/-/type-fest-5.7.0.tgz"
+  integrity sha512-1URUxUqfHFM1c+zfSPsa3gnkO7Aq21qyH75SIduNYz4SzY964rn1X2vCMQaHSHhktiw+0kPa2iyb6PUpXqB6Vg==
+  dependencies:
+    tagged-tag "^1.0.0"
 
 type-is@^1.6.18, type-is@^1.6.4, type-is@~1.6.18:
   version "1.6.18"
@@ -6903,3 +6964,8 @@ yocto-queue@^1.0.0:
   version "1.2.2"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-1.2.2.tgz"
   integrity sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==
+
+zod@^4.3.5:
+  version "4.4.3"
+  resolved "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz"
+  integrity sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==

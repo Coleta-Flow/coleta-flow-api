@@ -1,5 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
+import type { Request, Response } from 'express';
 
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
@@ -33,10 +35,12 @@ export function setupSwagger(app: INestApplication): void {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      tagsSorter: 'alpha',
-    },
+
+  // Serve raw OpenAPI JSON at /docs-json
+  app.use('/docs-json', (_req: Request, res: Response) => {
+    res.json(document);
   });
+
+  // Serve Scalar UI at /docs
+  app.use('/docs', apiReference({ spec: { content: document } }));
 }

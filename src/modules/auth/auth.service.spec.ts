@@ -10,6 +10,15 @@ const mockPrisma = {
     findFirst: jest.fn(),
     create: jest.fn(),
   },
+  role: {
+    findUnique: jest.fn(),
+  },
+  refreshToken: {
+    create: jest.fn().mockResolvedValue({ token: 'fake-refresh-token' }),
+    findUnique: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
+  },
 };
 
 const mockJwt = {
@@ -47,6 +56,7 @@ describe('AuthService', () => {
         email: 'admin@email.com',
         password: 'hashed-pass',
         role: UserRole.OPERATOR,
+        roleId: 'role-op',
         active: true,
         deletedAt: null,
       };
@@ -57,10 +67,10 @@ describe('AuthService', () => {
       const result = await service.login({ email: 'admin@email.com', password: 'correct' });
 
       expect(result.accessToken).toBe('fake-jwt-token');
-      expect(result.user.email).toBe('admin@email.com');
+      expect(result.refreshToken).toBe('fake-refresh-token');
       expect(mockJwt.sign).toHaveBeenCalledWith({
         sub: 'user-1',
-        role: UserRole.OPERATOR,
+        roleId: 'role-op',
       });
     });
 
@@ -89,9 +99,11 @@ describe('AuthService', () => {
         name: 'Novo Doador',
         email: 'donor@email.com',
         role: UserRole.DONOR,
+        roleId: 'role-donor',
       };
 
       mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-donor', name: UserRole.DONOR });
       mockPrisma.user.create.mockResolvedValue(createdUser);
 
       const result = await service.register({
@@ -102,13 +114,14 @@ describe('AuthService', () => {
       });
 
       expect(result.accessToken).toBe('fake-jwt-token');
-      expect(result.user.role).toBe(UserRole.DONOR);
+      expect(result.refreshToken).toBe('fake-refresh-token');
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             name: 'Novo Doador',
             email: 'donor@email.com',
             role: UserRole.DONOR,
+            roleId: 'role-donor',
             phone: '(85) 99999-0000',
           }),
         }),
@@ -135,6 +148,7 @@ describe('AuthService', () => {
         name: 'Social User',
         email: 'social@email.com',
         role: UserRole.DONOR,
+        roleId: 'role-donor',
         active: true,
         deletedAt: null,
       });
@@ -150,11 +164,13 @@ describe('AuthService', () => {
 
     it('should create user when not found', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-donor', name: UserRole.DONOR });
       mockPrisma.user.create.mockResolvedValue({
         id: 'new-user',
         name: 'newuser',
         email: 'new@email.com',
         role: UserRole.DONOR,
+        roleId: 'role-donor',
         active: true,
       });
 

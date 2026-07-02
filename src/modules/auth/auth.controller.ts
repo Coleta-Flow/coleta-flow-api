@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { SocialLoginDto } from './dto/social-login.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Auth')
@@ -13,7 +14,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  @ApiOperation({ summary: 'Authenticate and receive JWT token' })
+  @ApiOperation({ summary: 'Authenticate and receive JWT + refresh token' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   login(@Body() dto: LoginDto) {
@@ -35,6 +36,23 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   socialLogin(@Param('provider') provider: string, @Body() dto: SocialLoginDto) {
     return this.authService.socialLogin(provider, dto);
+  }
+
+  @Public()
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({ status: 200, description: 'New tokens returned' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  refresh(@Body() dto: RefreshDto) {
+    return this.authService.refresh(dto);
+  }
+
+  @Post('logout')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke refresh token' })
+  @ApiResponse({ status: 200, description: 'Session closed' })
+  logout(@Body() dto: RefreshDto) {
+    return this.authService.logout(dto);
   }
 
   @Get('me')

@@ -10,7 +10,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        },
+      },
+    }),
+  );
 
   app.enableCors({
     origin: config.get('APP_URL'),
@@ -34,7 +47,7 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`EcoLogi API running on http://localhost:${port}`);
-  console.log(`Swagger docs: http://localhost:${port}/docs`);
+  console.log(`Scalar docs: http://localhost:${port}/docs`);
 }
 
 bootstrap();

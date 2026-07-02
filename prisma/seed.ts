@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole, DonorRequestStatus, RouteStatus, BusinessEventType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'node:crypto';
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,26 @@ async function main() {
   await prisma.driver.deleteMany();
   await prisma.user.deleteMany();
   await prisma.fileAsset.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.role.deleteMany();
+
+  // =========================================================================
+  // Roles
+  // =========================================================================
+
+  const roleNames = [
+    UserRole.ADMIN,
+    UserRole.OPERATOR,
+    UserRole.DRIVER,
+    UserRole.COLLECTION_POINT_OPERATOR,
+    UserRole.DONOR,
+  ] as const;
+
+  const roleMap = {} as Record<UserRole, string>;
+  for (const name of roleNames) {
+    const role = await prisma.role.create({ data: { name } });
+    roleMap[name] = role.id;
+  }
 
   // =========================================================================
   // Usuários
@@ -37,6 +58,7 @@ async function main() {
       email: 'admin@ecologi.com.br',
       password: hash,
       role: UserRole.ADMIN,
+      roleId: roleMap[UserRole.ADMIN],
       phone: '(85) 98888-0001',
     },
   });
@@ -49,6 +71,7 @@ async function main() {
       email: 'operador@ecologi.com.br',
       password: hash,
       role: UserRole.OPERATOR,
+      roleId: roleMap[UserRole.OPERATOR],
       phone: '(85) 98888-0002',
     },
   });
@@ -61,6 +84,7 @@ async function main() {
       email: 'motorista@ecologi.com.br',
       password: hash,
       role: UserRole.DRIVER,
+      roleId: roleMap[UserRole.DRIVER],
       phone: '(85) 98888-0003',
     },
   });
@@ -88,6 +112,7 @@ async function main() {
       email: 'motorista2@ecologi.com.br',
       password: hash,
       role: UserRole.DRIVER,
+      roleId: roleMap[UserRole.DRIVER],
       phone: '(85) 98888-0004',
     },
   });
@@ -115,6 +140,7 @@ async function main() {
       email: 'ponto@ecologi.com.br',
       password: hash,
       role: UserRole.COLLECTION_POINT_OPERATOR,
+      roleId: roleMap[UserRole.COLLECTION_POINT_OPERATOR],
       phone: '(85) 98888-0005',
     },
   });
@@ -128,6 +154,7 @@ async function main() {
       email: 'doador@ecologi.com.br',
       password: hash,
       role: UserRole.DONOR,
+      roleId: roleMap[UserRole.DONOR],
       phone: '(85) 98888-0006',
     },
   });

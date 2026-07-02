@@ -48,7 +48,7 @@ export class FilesService {
   }
 
   private async uploadToS3(file: Express.Multer.File): Promise<string> {
-    // Dynamic import to avoid hard dependency when STORAGE_TYPE=local
+    // @ts-expect-error - dynamic import evita dependência quando STORAGE_TYPE=local
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
     const bucket = this.config.get<string>('AWS_S3_BUCKET', '');

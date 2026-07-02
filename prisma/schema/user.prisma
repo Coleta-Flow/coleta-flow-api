@@ -12,6 +12,8 @@ model User {
   email    String
   password String
   role     UserRole @default(OPERATOR)
+  roleId   String
+  roleRel  Role     @relation(fields: [roleId], references: [id])
   phone    String?
   active   Boolean  @default(true)
 
@@ -21,7 +23,8 @@ model User {
   deletedAt DateTime?
 
   // — Relations
-  driver Driver?
+  driver        Driver?
+  refreshTokens RefreshToken[]
 
   @@unique([email])
   @@map("users")
