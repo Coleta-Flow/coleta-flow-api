@@ -115,6 +115,59 @@ wss://sua-api.up.railway.app/tracking
 | Uploads sumindo | Migre para `STORAGE_TYPE=s3` |
 | Prisma OpenSSL / `Error load` no deploy | Dockerfile usa `node:22-bookworm-slim` + `openssl`; regenere client após mudar `binaryTargets` |
 | Health check `service unavailable` | `/health` é público (sem JWT); use `/health/ready` para testar DB; confira `PORT`, `APP_URL` e `API_URL` como URI válida |
+| **P3009** — migration falhou | Veja [Recuperar migration P3009](#recuperar-migration-p3009) abaixo |
+
+## Recuperar migration P3009
+
+Erro típico no deploy:
+
+```text
+Error: P3009
+migrate found failed migrations in the target database
+The `20260701000006_add_roles_table` migration ... failed
+```
+
+Isso trava o `prisma migrate deploy` no entrypoint. Causas comuns:
+
+1. Migration aplicou **parcialmente** (ex.: tabela `roles` criada, mas `roleId` ficou NULL em algum user).
+2. Schema já existia via `db push`/seed antes da migration terminar.
+3. Users com role legado (`SUPER_ADMIN`/`TENANT_ADMIN`) sem match na tabela `roles`.
+
+### Passo a passo (Railway)
+
+1. Abra o **MySQL** no Railway → **Connect** (ou `railway connect mysql`).
+
+2. Rode o diagnóstico:
+
+```sql
+SELECT migration_name, finished_at, rolled_back_at, LEFT(logs, 500) AS logs
+FROM _prisma_migrations
+ORDER BY started_at DESC
+LIMIT 5;
+
+SHOW TABLES LIKE 'roles';
+SHOW COLUMNS FROM users LIKE 'roleId';
+SELECT DISTINCT role FROM users;
+SELECT COUNT(*) AS sem_roleId FROM users WHERE roleId IS NULL;
+```
+
+3. Complete o schema manualmente com `scripts/fix-migration-006-prod.sql` (ajuste os passos comentados conforme o estado).
+
+4. Marque a migration como resolvida **no serviço da API**:
+
+```bash
+railway run npx prisma migrate resolve --applied 20260701000006_add_roles_table
+```
+
+5. Faça **redeploy** da API. As migrations seguintes (`007`, `008`, …) devem aplicar normalmente.
+
+Se preferir reexecutar a migration do zero (só se conseguiu reverter tudo manualmente):
+
+```bash
+railway run npx prisma migrate resolve --rolled-back 20260701000006_add_roles_table
+```
+
+Depois redeploy.
 
 ## Arquivos relevantes
 
