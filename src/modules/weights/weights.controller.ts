@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Request } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { IsUUID, IsNumber, IsPositive, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -14,6 +14,7 @@ class RegisterWeightDto {
   @ApiProperty({ example: 13.5 }) @IsNumber() @IsPositive() netWeightKg: number;
   @ApiPropertyOptional({ example: 1.5 }) @IsNumber() @IsPositive() @IsOptional() tareKg?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() notes?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() photoUrl?: string;
 }
 
 @ApiTags('Weights')
@@ -25,6 +26,8 @@ export class WeightsController {
   @Post()
   @Roles(UserRole.DRIVER, UserRole.COLLECTION_POINT_OPERATOR, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Register confirmed material weight' })
+  @ApiResponse({ status: 201, description: 'Weight record created' })
+  @ApiResponse({ status: 404, description: 'Donor request not found' })
   register(@Body() dto: RegisterWeightDto, @Request() req: any) {
     return this.weightsService.registerWeight({
       ...dto,

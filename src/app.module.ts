@@ -22,6 +22,7 @@ import { CompanySettingsModule } from './modules/company-settings/company-settin
 import { DriversModule } from './modules/drivers/drivers.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { HealthModule } from './health/health.module';
+import { PermissionEventsModule } from './modules/permission-events/permission-events.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { HealthModule } from './health/health.module';
     DriversModule,
     VehiclesModule,
     HealthModule,
+    PermissionEventsModule,
   ],
 })
 export class AppModule {}

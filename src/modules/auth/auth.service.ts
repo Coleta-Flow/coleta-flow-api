@@ -98,7 +98,7 @@ export class AuthService {
     name: string;
     email: string;
     roleId: string;
-    role?: UserRole;
+    role: UserRole;
   }) {
     const payload = { sub: user.id, roleId: user.roleId };
 
@@ -116,6 +116,12 @@ export class AuthService {
     return {
       accessToken,
       refreshToken: refreshToken.token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 }

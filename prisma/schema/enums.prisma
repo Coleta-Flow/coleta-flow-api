@@ -47,6 +47,19 @@ enum RouteStatus {
   CANCELLED
 }
 
+// Tipo de permissão de dispositivo monitorada (auditoria de localização do motorista)
+enum PermissionType {
+  LOCATION_FOREGROUND
+  LOCATION_BACKGROUND
+}
+
+// Estado de uma permissão de dispositivo no momento do evento
+enum PermissionEventStatus {
+  GRANTED
+  DENIED
+  REVOKED
+}
+
 // Tipos de evento auditáveis no event store (tabela business_events)
 enum BusinessEventType {
   DONOR_REQUEST_CREATED
@@ -58,10 +71,13 @@ enum BusinessEventType {
   ROUTE_STARTED
   DRIVER_ARRIVED_AT_DONOR
   MATERIAL_COLLECTED
+  DRIVER_GOING_TO_COLLECTION_POINT
   DRIVER_ARRIVED_AT_COLLECTION_POINT
   MATERIAL_DELIVERED_TO_COLLECTION_POINT
   WEIGHT_REGISTERED
   DECLARATION_GENERATED
   ROUTE_FINISHED
   REQUEST_CANCELLED
+  TRACKING_SESSION_STARTED
+  TRACKING_SESSION_STOPPED
 }

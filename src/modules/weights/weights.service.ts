@@ -22,6 +22,7 @@ export class WeightsService {
     netWeightKg: number;
     tareKg?: number;
     notes?: string;
+    photoUrl?: string;
     confirmedByUserId?: string;
   }) {
     const request = await this.prisma.donorRequest.findFirst({
@@ -45,6 +46,7 @@ export class WeightsService {
           netWeightKg: data.netWeightKg,
           tareKg: data.tareKg,
           notes: data.notes,
+          photoUrl: data.photoUrl,
           confirmedByUserId: data.confirmedByUserId,
         },
       });
