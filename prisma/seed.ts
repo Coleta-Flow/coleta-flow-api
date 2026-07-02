@@ -4,30 +4,43 @@ import * as crypto from 'node:crypto';
 
 const prisma = new PrismaClient();
 
+async function safeDeleteMany(label: string, action: () => Promise<unknown>) {
+  try {
+    await action();
+  } catch (error: unknown) {
+    const code = (error as { code?: string })?.code;
+    if (code === 'P2021') {
+      console.warn(`[seed] skipping ${label}: table not found`);
+      return;
+    }
+    throw error;
+  }
+}
+
 async function main() {
   const hash = await bcrypt.hash('123456', 10);
 
   // =========================================================================
   // Limpeza completa (ordem respeita FK)
   // =========================================================================
-  await prisma.businessEvent.deleteMany();
-  await prisma.declaration.deleteMany();
-  await prisma.weightRecord.deleteMany();
-  await prisma.driverLocationSnapshot.deleteMany();
-  await prisma.trackingSession.deleteMany();
-  await prisma.routeStop.deleteMany();
-  await prisma.route.deleteMany();
-  await prisma.pickupDecision.deleteMany();
-  await prisma.donorRequestPhoto.deleteMany();
-  await prisma.donorRequest.deleteMany();
-  await prisma.donor.deleteMany();
-  await prisma.collectionPoint.deleteMany();
-  await prisma.materialType.deleteMany();
-  await prisma.driver.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.fileAsset.deleteMany();
-  await prisma.role.deleteMany();
+  await safeDeleteMany('businessEvent', () => prisma.businessEvent.deleteMany());
+  await safeDeleteMany('declaration', () => prisma.declaration.deleteMany());
+  await safeDeleteMany('weightRecord', () => prisma.weightRecord.deleteMany());
+  await safeDeleteMany('driverLocationSnapshot', () => prisma.driverLocationSnapshot.deleteMany());
+  await safeDeleteMany('trackingSession', () => prisma.trackingSession.deleteMany());
+  await safeDeleteMany('routeStop', () => prisma.routeStop.deleteMany());
+  await safeDeleteMany('route', () => prisma.route.deleteMany());
+  await safeDeleteMany('pickupDecision', () => prisma.pickupDecision.deleteMany());
+  await safeDeleteMany('donorRequestPhoto', () => prisma.donorRequestPhoto.deleteMany());
+  await safeDeleteMany('donorRequest', () => prisma.donorRequest.deleteMany());
+  await safeDeleteMany('donor', () => prisma.donor.deleteMany());
+  await safeDeleteMany('collectionPoint', () => prisma.collectionPoint.deleteMany());
+  await safeDeleteMany('materialType', () => prisma.materialType.deleteMany());
+  await safeDeleteMany('driver', () => prisma.driver.deleteMany());
+  await safeDeleteMany('refreshToken', () => prisma.refreshToken.deleteMany());
+  await safeDeleteMany('user', () => prisma.user.deleteMany());
+  await safeDeleteMany('fileAsset', () => prisma.fileAsset.deleteMany());
+  await safeDeleteMany('role', () => prisma.role.deleteMany());
 
   // =========================================================================
   // Roles
