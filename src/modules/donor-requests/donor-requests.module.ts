@@ -6,10 +6,12 @@ import { UpdateDonorRequestHandler } from './application/handlers/update-donor-r
 import { CancelDonorRequestHandler } from './application/handlers/cancel-donor-request.handler';
 import { ApproveForPickupHandler } from './application/handlers/approve-for-pickup.handler';
 import { DirectToCollectionPointHandler } from './application/handlers/direct-to-point.handler';
+import { StartReviewHandler } from './application/handlers/start-review.handler';
 import { ListDonorRequestsHandler } from './application/handlers/list-donor-requests.handler';
 import { GetDonorRequestDetailsHandler } from './application/handlers/get-donor-request-details.handler';
 import { EventStoreModule } from '../event-store/event-store.module';
 import { PrismaModule } from '../../database/prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
 
 const commandHandlers = [
   CreateDonorRequestHandler,
@@ -17,12 +19,13 @@ const commandHandlers = [
   CancelDonorRequestHandler,
   ApproveForPickupHandler,
   DirectToCollectionPointHandler,
+  StartReviewHandler,
 ];
 
 const queryHandlers = [ListDonorRequestsHandler, GetDonorRequestDetailsHandler];
 
 @Module({
-  imports: [CqrsModule, EventStoreModule, PrismaModule],
+  imports: [CqrsModule, EventStoreModule, PrismaModule, AuthModule],
   controllers: [DonorRequestsController],
   providers: [...commandHandlers, ...queryHandlers],
 })

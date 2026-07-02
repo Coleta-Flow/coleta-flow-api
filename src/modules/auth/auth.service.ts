@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
@@ -27,31 +27,10 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findFirst({
-      where: { email: dto.email },
-    });
-    if (existing) throw new ConflictException('E-mail já cadastrado.');
-
-    const donorRole = await this.prisma.role.findUnique({
-      where: { name: UserRole.DONOR },
-    });
-    if (!donorRole) throw new Error('Role DONOR não encontrada no banco.');
-
-    const hashed = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        name: dto.name,
-        email: dto.email,
-        password: hashed,
-        role: UserRole.DONOR,
-        roleId: donorRole.id,
-        phone: dto.phone,
-      },
-    });
-
-    return this.generateTokens(user);
+  async register(_dto: RegisterDto) {
+    throw new BadRequestException(
+      'Cadastro disponível apenas via formulário de solicitação de coleta. Acesse o site e solicite uma coleta para criar sua conta.',
+    );
   }
 
   async socialLogin(provider: string, data: { token: string; name?: string; email?: string }) {
@@ -59,25 +38,14 @@ export class AuthService {
       throw new UnauthorizedException('E-mail é obrigatório para login social.');
     }
 
-    let user = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: { email: data.email, deletedAt: null },
     });
 
     if (!user) {
-      const donorRole = await this.prisma.role.findUnique({
-        where: { name: UserRole.DONOR },
-      });
-      if (!donorRole) throw new Error('Role DONOR não encontrada no banco.');
-
-      user = await this.prisma.user.create({
-        data: {
-          name: data.name ?? data.email.split('@')[0],
-          email: data.email,
-          password: await bcrypt.hash(Math.random().toString(36), 10),
-          role: UserRole.DONOR,
-          roleId: donorRole.id,
-        },
-      });
+      throw new UnauthorizedException(
+        'Conta não encontrada. Solicite uma coleta ou peça ao administrador para criar seu acesso.',
+      );
     }
 
     if (!user.active) {
@@ -115,6 +83,14 @@ export class AuthService {
       data: { revoked: true },
     });
     return { message: 'Sessão encerrada com sucesso.' };
+  }
+
+  async issueTokensForUser(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, active: true, deletedAt: null },
+    });
+    if (!user) throw new UnauthorizedException('Usuário não encontrado.');
+    return this.generateTokens(user);
   }
 
   private async generateTokens(user: {

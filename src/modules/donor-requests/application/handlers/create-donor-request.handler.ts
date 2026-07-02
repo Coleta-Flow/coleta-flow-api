@@ -1,9 +1,22 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../../../database/prisma/prisma.service';
 import { CreateDonorRequestCommand } from '../commands/create-donor-request.command';
 import { EventStoreService } from '../../../event-store/event-store.service';
+import { AuthService } from '../../../auth/auth.service';
 import { BusinessEventType } from '@prisma/client';
+
+function buildAddress(command: CreateDonorRequestCommand): string {
+  const parts = [
+    command.street,
+    command.number,
+    command.complement,
+    command.neighborhood,
+  ].filter(Boolean);
+  return parts.join(', ');
+}
 
 @CommandHandler(CreateDonorRequestCommand)
 @Injectable()
@@ -11,48 +24,90 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventStore: EventStoreService,
+    private readonly authService: AuthService,
   ) {}
 
   async execute(command: CreateDonorRequestCommand) {
     const trackingCode = `CF-${Date.now().toString(36).toUpperCase()}`;
+    const address = buildAddress(command);
 
-    const request = await this.prisma.$transaction(async (tx) => {
-      // Find or create donor by whatsapp (unique identifier for public form)
-      let donorId: string | undefined;
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: command.donorEmail, deletedAt: null },
+    });
+    if (existingUser) {
+      throw new ConflictException('E-mail já possui conta. Faça login para acompanhar suas solicitações.');
+    }
 
-      if (command.donorWhatsapp) {
-        let donor = await tx.donor.findFirst({
-          where: {
-            OR: [
-              { whatsapp: command.donorWhatsapp },
-              ...(command.donorEmail ? [{ email: command.donorEmail }] : []),
-            ],
-            deletedAt: null,
-          },
-        });
+    const donorRole = await this.prisma.role.findUnique({
+      where: { name: UserRole.DONOR },
+    });
+    if (!donorRole) throw new Error('Role DONOR não encontrada no banco.');
 
-        if (!donor) {
-          donor = await tx.donor.create({
-            data: {
-              name: command.donorName,
-              whatsapp: command.donorWhatsapp,
-              email: command.donorEmail,
-              city: command.city,
-            },
-          });
-        }
+    const hashedPassword = await bcrypt.hash(command.password, 10);
 
-        donorId = donor.id;
+    const { request, userId } = await this.prisma.$transaction(async (tx) => {
+      let donor = await tx.donor.findFirst({
+        where: {
+          OR: [
+            { whatsapp: command.donorWhatsapp },
+            { email: command.donorEmail },
+            ...(command.cpfCnpj ? [{ cpfCnpj: command.cpfCnpj }] : []),
+          ],
+          deletedAt: null,
+        },
+      });
+
+      if (donor?.userId) {
+        throw new ConflictException('Este doador já possui conta. Faça login para continuar.');
       }
+
+      const donorData = {
+        name: command.donorName,
+        whatsapp: command.donorWhatsapp,
+        email: command.donorEmail,
+        cpfCnpj: command.cpfCnpj,
+        cep: command.cep,
+        street: command.street,
+        number: command.number,
+        complement: command.complement,
+        neighborhood: command.neighborhood,
+        city: command.city,
+        state: command.state,
+      };
+
+      if (donor) {
+        donor = await tx.donor.update({
+          where: { id: donor.id },
+          data: donorData,
+        });
+      } else {
+        donor = await tx.donor.create({ data: donorData });
+      }
+
+      const user = await tx.user.create({
+        data: {
+          name: command.donorName,
+          email: command.donorEmail,
+          password: hashedPassword,
+          role: UserRole.DONOR,
+          roleId: donorRole.id,
+          phone: command.donorWhatsapp,
+        },
+      });
+
+      await tx.donor.update({
+        where: { id: donor.id },
+        data: { userId: user.id },
+      });
 
       const donorRequest = await tx.donorRequest.create({
         data: {
           trackingCode,
-          donorId,
+          donorId: donor.id,
           donorName: command.donorName,
           donorWhatsapp: command.donorWhatsapp,
           donorEmail: command.donorEmail,
-          address: command.address,
+          address,
           city: command.city,
           materialTypeId: command.materialTypeId,
           description: command.description,
@@ -77,7 +132,7 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
         });
       }
 
-      return donorRequest;
+      return { request: donorRequest, userId: user.id };
     });
 
     await this.eventStore.save({
@@ -91,6 +146,13 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
       },
     });
 
-    return { id: request.id, trackingCode, message: 'Solicitação criada com sucesso.' };
+    const tokens = await this.authService.issueTokensForUser(userId);
+
+    return {
+      id: request.id,
+      trackingCode,
+      message: 'Solicitação criada com sucesso.',
+      ...tokens,
+    };
   }
 }

@@ -23,6 +23,7 @@ model User {
   deletedAt DateTime?
 
   // — Relations
+  donor         Donor?
   driver        Driver?
   refreshTokens RefreshToken[]
 

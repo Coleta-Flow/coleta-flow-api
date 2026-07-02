@@ -7,12 +7,16 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { EmailService } from '../notifications/email.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto, ChangePasswordDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   findAll() {
     return this.prisma.user.findMany({
@@ -100,7 +104,7 @@ export class UsersService {
     if (!role) throw new NotFoundException('Role não encontrada.');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         name: dto.name,
         email: dto.email,
@@ -119,6 +123,33 @@ export class UsersService {
         createdAt: true,
       },
     });
+
+    await this.emailService.send({
+      to: dto.email,
+      subject: 'Acesso à plataforma Eco Logi',
+      text: [
+        `Olá ${dto.name},`,
+        '',
+        'Sua conta na plataforma Eco Logi foi criada por um administrador.',
+        '',
+        `E-mail: ${dto.email}`,
+        `Senha temporária: ${dto.password}`,
+        '',
+        'Recomendamos alterar sua senha após o primeiro acesso.',
+        '',
+        'Acesse: https://app.ecologi.com.br/login',
+      ].join('\n'),
+      html: [
+        `<p>Olá <strong>${dto.name}</strong>,</p>`,
+        '<p>Sua conta na plataforma <strong>Eco Logi</strong> foi criada por um administrador.</p>',
+        `<p><strong>E-mail:</strong> ${dto.email}<br/>`,
+        `<strong>Senha temporária:</strong> ${dto.password}</p>`,
+        '<p>Recomendamos alterar sua senha após o primeiro acesso.</p>',
+        '<p><a href="https://app.ecologi.com.br/login">Acessar plataforma</a></p>',
+      ].join(''),
+    });
+
+    return user;
   }
 
   async update(id: string, dto: UpdateUserDto) {

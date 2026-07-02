@@ -29,6 +29,7 @@ import { UpdateDonorRequestCommand } from '../../application/commands/update-don
 import { CancelDonorRequestCommand } from '../../application/commands/cancel-donor-request.command';
 import { ApproveForPickupCommand } from '../../application/commands/approve-for-pickup.command';
 import { DirectToCollectionPointCommand } from '../../application/commands/direct-to-point.command';
+import { StartReviewCommand } from '../../application/commands/start-review.command';
 import { ListDonorRequestsQuery } from '../../application/queries/list-donor-requests.query';
 import { GetDonorRequestDetailsQuery } from '../../application/queries/get-donor-request-details.query';
 
@@ -51,8 +52,15 @@ export class DonorRequestsController {
         dto.name,
         dto.whatsapp,
         dto.email,
-        dto.address,
+        dto.password,
+        dto.cpfCnpj,
+        dto.cep,
+        dto.street,
+        dto.number,
+        dto.complement,
+        dto.neighborhood,
         dto.city,
+        dto.state,
         dto.materialTypeId,
         dto.description,
         dto.estimatedWeightKg,
@@ -99,6 +107,17 @@ export class DonorRequestsController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   getOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.queryBus.execute(new GetDonorRequestDetailsQuery(id));
+  }
+
+  @Patch('donor-requests/:id/start-review')
+  @ApiBearerAuth()
+  @Roles(UserRole.OPERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Move request from REQUESTED to UNDER_REVIEW' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Request moved to under review' })
+  @ApiResponse({ status: 422, description: 'INVALID_STATUS_TRANSITION' })
+  startReview(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
+    return this.commandBus.execute(new StartReviewCommand(id, req.user.id));
   }
 
   @Patch('donor-requests/:id/approve-pickup')

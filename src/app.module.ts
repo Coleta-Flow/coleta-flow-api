@@ -16,6 +16,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { EventStoreModule } from './modules/event-store/event-store.module';
 import { MaterialTypesModule } from './modules/material-types/material-types.module';
 import { DonorsModule } from './modules/donors/donor.module';
+import { DonorPortalModule } from './modules/donor-portal/donor-portal.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
 
@@ -40,6 +41,7 @@ import { CompanySettingsModule } from './modules/company-settings/company-settin
     EventStoreModule,
     MaterialTypesModule,
     DonorsModule,
+    DonorPortalModule,
     NotificationsModule,
     CompanySettingsModule,
   ],

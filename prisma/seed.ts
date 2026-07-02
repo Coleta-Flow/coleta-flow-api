@@ -20,12 +20,13 @@ async function main() {
   await prisma.pickupDecision.deleteMany();
   await prisma.donorRequestPhoto.deleteMany();
   await prisma.donorRequest.deleteMany();
+  await prisma.donor.deleteMany();
   await prisma.collectionPoint.deleteMany();
   await prisma.materialType.deleteMany();
   await prisma.driver.deleteMany();
+  await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();
   await prisma.fileAsset.deleteMany();
-  await prisma.refreshToken.deleteMany();
   await prisma.role.deleteMany();
 
   // =========================================================================
@@ -259,6 +260,24 @@ async function main() {
     { name: 'Gustavo Nunes', whatsapp: '(85) 98765-1010', address: 'Rua Pedro I, 400', city: 'Caucaia' },
     { name: 'Amanda Farias', whatsapp: '(85) 98765-1011', address: 'Rua Coronel Jucá, 200', city: 'Maracanaú' },
     { name: 'Daniel Oliveira', whatsapp: '(85) 98765-1012', address: 'Rua 13 de Maio, 700', city: 'Sobral' },
+    { name: 'Beatriz Nascimento', whatsapp: '(85) 98765-1013', address: 'Rua Osvaldo Cruz, 120', city: 'Fortaleza' },
+    { name: 'Ricardo Souza', whatsapp: '(85) 98765-1014', address: 'Av. Alberto Craveiro, 900', city: 'Fortaleza' },
+    { name: 'Larissa Martins', whatsapp: '(85) 98765-1015', address: 'Rua Delmiro Gouveia, 45', city: 'Fortaleza' },
+    { name: 'Felipe Carvalho', whatsapp: '(85) 98765-1016', address: 'Av. Pontes Vieira, 1800', city: 'Fortaleza' },
+    { name: 'Isabela Freitas', whatsapp: '(85) 98765-1017', address: 'Rua Barbosa de Freitas, 320', city: 'Fortaleza' },
+    { name: 'Bruno Cavalcante', whatsapp: '(85) 98765-1018', address: 'Av. Eng. Santana Júnior, 2100', city: 'Fortaleza' },
+    { name: 'Carla Duarte', whatsapp: '(85) 98765-1019', address: 'Rua Prof. Sá Leitão, 88', city: 'Eusébio' },
+    { name: 'Henrique Pinto', whatsapp: '(85) 98765-1020', address: 'Av. Contorno Leste, 550', city: 'Maracanaú' },
+    { name: 'Vanessa Lopes', whatsapp: '(85) 98765-1021', address: 'Rua Dr. Atualpa, 670', city: 'Fortaleza' },
+    { name: 'Diego Moura', whatsapp: '(85) 98765-1022', address: 'Av. Jovita Feitosa, 1400', city: 'Fortaleza' },
+    { name: 'Renata Vieira', whatsapp: '(85) 98765-1023', address: 'Rua Sen. Pompeu, 230', city: 'Fortaleza' },
+    { name: 'Paulo Henrique', whatsapp: '(85) 98765-1024', address: 'Av. I, 310', city: 'Caucaia' },
+    { name: 'Mariana Teixeira', whatsapp: '(85) 98765-1025', address: 'Rua Major Facundo, 410', city: 'Sobral' },
+    { name: 'Eduardo Ramos', whatsapp: '(85) 98765-1026', address: 'Av. Bezerra de Menezes, 2200', city: 'Fortaleza' },
+    { name: 'Simone Araújo', whatsapp: '(85) 98765-1027', address: 'Rua Padre Valdevino, 980', city: 'Fortaleza' },
+    { name: 'Leandro Brito', whatsapp: '(85) 98765-1028', address: 'Av. Aguanambi, 1650', city: 'Fortaleza' },
+    { name: 'Tatiane Melo', whatsapp: '(85) 98765-1029', address: 'Rua Conselheiro Estelita, 75', city: 'Fortaleza' },
+    { name: 'André Cunha', whatsapp: '(85) 98765-1030', address: 'Av. Central, 420', city: 'Maracanaú' },
   ];
 
   const donorRecords: Record<string, string> = {};
@@ -289,6 +308,7 @@ async function main() {
     extra?: {
       operatorNotes?: string;
       cancelReason?: string;
+      createdAt?: Date;
     },
   ) {
     const materialTypeId = materialTypeRecords[materialName];
@@ -296,6 +316,7 @@ async function main() {
 
     const trackingCode = `COL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const donorId = donorRecords[donorName];
+    const createdAt = extra?.createdAt ?? new Date();
 
     return prisma.donorRequest.create({
       data: {
@@ -312,132 +333,110 @@ async function main() {
         bestTimeForPickup,
         operatorNotes: extra?.operatorNotes,
         cancelReason: extra?.cancelReason,
+        createdAt,
+        updatedAt: createdAt,
       },
     });
   }
 
-  // REQUESTED
-  const donor1 = await createDonorRequest(
-    donorsData[0].name, donorsData[0].whatsapp, donorsData[0].address, donorsData[0].city,
-    'Papel e papelão', 'Caixas de papelão e jornais velhos — aproximadamente 15 kg.', 15, 'Manhã (08h–12h)',
-    DonorRequestStatus.REQUESTED,
-  );
-  await prisma.businessEvent.create({
-    data: {
-      entityType: 'donor_request',
-      entityId: donor1.id,
-      type: BusinessEventType.DONOR_REQUEST_CREATED,
-      payload: { donorName: donorsData[0].name, status: DonorRequestStatus.REQUESTED },
-    },
-  });
+  const materialNames = materialTypes.map((m) => m.name);
+  const descriptions = [
+    'Material reciclável separado e embalado para coleta.',
+    'Grande volume acumulado — necessita veículo com capacidade.',
+    'Resíduos de reforma residencial, preferencialmente pela manhã.',
+    'Coleta periódica de material de escritório.',
+    'Garrafas e embalagens limpas, prontas para triagem.',
+    'Sucata metálica de pequeno porte.',
+    'Restos de poda e material orgânico seco.',
+  ];
+  const pickupTimes = ['Manhã (08h–12h)', 'Tarde (13h–17h)', 'Comercial (09h–18h)'];
 
-  // UNDER_REVIEW
-  const donor2 = await createDonorRequest(
-    donorsData[1].name, donorsData[1].whatsapp, donorsData[1].address, donorsData[1].city,
-    'Plástico', 'Garrafas PET e embalagens plásticas diversas.', 8, 'Tarde (13h–17h)',
-    DonorRequestStatus.UNDER_REVIEW,
-    { operatorNotes: 'Aguardando confirmação de endereço.' },
-  );
-  await prisma.businessEvent.create({
-    data: {
-      entityType: 'donor_request',
-      entityId: donor2.id,
-      type: BusinessEventType.DONOR_REQUEST_CREATED,
-      payload: { donorName: donorsData[1].name, status: DonorRequestStatus.REQUESTED },
-    },
-  });
-  await prisma.businessEvent.create({
-    data: {
-      entityType: 'donor_request',
-      entityId: donor2.id,
-      type: BusinessEventType.DONOR_REQUEST_REVIEWED,
-      payload: { reviewedBy: operator.name, status: DonorRequestStatus.UNDER_REVIEW },
-    },
-  });
+  const statusDistribution: Array<{ status: DonorRequestStatus; count: number }> = [
+    { status: DonorRequestStatus.REQUESTED, count: 24 },
+    { status: DonorRequestStatus.UNDER_REVIEW, count: 18 },
+    { status: DonorRequestStatus.APPROVED_FOR_PICKUP, count: 16 },
+    { status: DonorRequestStatus.DIRECTED_TO_COLLECTION_POINT, count: 8 },
+    { status: DonorRequestStatus.DRIVER_ASSIGNED, count: 10 },
+    { status: DonorRequestStatus.DRIVER_ON_THE_WAY, count: 6 },
+    { status: DonorRequestStatus.DRIVER_ARRIVED, count: 5 },
+    { status: DonorRequestStatus.COLLECTED, count: 12 },
+    { status: DonorRequestStatus.GOING_TO_COLLECTION_POINT, count: 6 },
+    { status: DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT, count: 14 },
+    { status: DonorRequestStatus.WEIGHED, count: 10 },
+    { status: DonorRequestStatus.DECLARATION_AVAILABLE, count: 8 },
+    { status: DonorRequestStatus.FINISHED, count: 32 },
+    { status: DonorRequestStatus.CANCELLED, count: 12 },
+  ];
 
-  // APPROVED_FOR_PICKUP
-  const donor3 = await createDonorRequest(
-    donorsData[2].name, donorsData[2].whatsapp, donorsData[2].address, donorsData[2].city,
-    'Vidro', 'Garrafas de vidro e potes diversos.', 20, 'Manhã (08h–12h)',
-    DonorRequestStatus.APPROVED_FOR_PICKUP,
-    { operatorNotes: 'Coleta aprovada. Material frágil — embalar com cuidado.' },
-  );
+  let requestSeq = 0;
+  const allRequests: Awaited<ReturnType<typeof createDonorRequest>>[] = [];
 
-  // DRIVER_ON_THE_WAY
-  const donor4 = await createDonorRequest(
-    donorsData[3].name, donorsData[3].whatsapp, donorsData[3].address, donorsData[3].city,
-    'Metal', 'Latas de alumínio e ferragens de reforma.', 30, 'Tarde (13h–17h)',
-    DonorRequestStatus.DRIVER_ON_THE_WAY,
-  );
+  for (const { status, count } of statusDistribution) {
+    for (let i = 0; i < count; i++) {
+      const donor = donorsData[requestSeq % donorsData.length];
+      const materialName = materialNames[requestSeq % materialNames.length];
+      const daysAgo = Math.floor((requestSeq * 2.7) % 120);
+      const createdAt = new Date(Date.now() - daysAgo * 86_400_000 - (requestSeq % 12) * 3_600_000);
+      const weight = 5 + (requestSeq % 45) + (requestSeq % 3) * 2.5;
 
-  // COLLECTED
-  const donor5 = await createDonorRequest(
-    donorsData[4].name, donorsData[4].whatsapp, donorsData[4].address, donorsData[4].city,
-    'Papel e papelão', 'Grande volume de papelão de mudança.', 50, 'Manhã (08h–12h)',
-    DonorRequestStatus.COLLECTED,
-  );
+      const request = await createDonorRequest(
+        donor.name,
+        donor.whatsapp,
+        donor.address,
+        donor.city,
+        materialName,
+        descriptions[requestSeq % descriptions.length],
+        weight,
+        pickupTimes[requestSeq % pickupTimes.length],
+        status,
+        status === DonorRequestStatus.CANCELLED
+          ? { cancelReason: 'Doador desistiu ou endereço inacessível.', createdAt }
+          : status === DonorRequestStatus.UNDER_REVIEW
+            ? { operatorNotes: 'Em triagem pelo operador.', createdAt }
+            : { createdAt },
+      );
 
-  // DELIVERED_TO_COLLECTION_POINT
-  const donor6 = await createDonorRequest(
-    donorsData[5].name, donorsData[5].whatsapp, donorsData[5].address, donorsData[5].city,
-    'Eletrônicos', '2 computadores antigos, 3 monitores, cabos diversos.', 12, 'Tarde (13h–17h)',
+      allRequests.push(request);
+      requestSeq++;
+
+      if (status === DonorRequestStatus.REQUESTED) {
+        await prisma.businessEvent.create({
+          data: {
+            entityType: 'donor_request',
+            entityId: request.id,
+            type: BusinessEventType.DONOR_REQUEST_CREATED,
+            payload: { donorName: donor.name, status },
+          },
+        });
+      }
+    }
+  }
+
+  const activeRouteRequest =
+    allRequests.find((r) => r.status === DonorRequestStatus.DRIVER_ON_THE_WAY) ?? allRequests[0];
+  const weightedStatuses: DonorRequestStatus[] = [
+    DonorRequestStatus.FINISHED,
+    DonorRequestStatus.DECLARATION_AVAILABLE,
+    DonorRequestStatus.WEIGHED,
     DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT,
-  );
-
-  // FINISHED
-  const donor7 = await createDonorRequest(
-    donorsData[6].name, donorsData[6].whatsapp, donorsData[6].address, donorsData[6].city,
-    'Plástico', 'Sacos de garrafas PET e embalagens limpas.', 10, 'Manhã (08h–12h)',
-    DonorRequestStatus.FINISHED,
-  );
-
-  const donor8 = await createDonorRequest(
-    donorsData[7].name, donorsData[7].whatsapp, donorsData[7].address, donorsData[7].city,
-    'Óleo de cozinha', 'Aproximadamente 10 litros de óleo usado armazenados em garrafas PET.', 10, 'Manhã (08h–12h)',
-    DonorRequestStatus.FINISHED,
-  );
-
-  // CANCELLED
-  const donor9 = await createDonorRequest(
-    donorsData[8].name, donorsData[8].whatsapp, donorsData[8].address, donorsData[8].city,
-    'Madeira', 'Sobras de móveis de madeira.', 40, 'Tarde (13h–17h)',
-    DonorRequestStatus.CANCELLED,
-    { cancelReason: 'Doador desistiu da coleta.' },
-  );
-
-  // Additional requests in other cities
-  const donor10 = await createDonorRequest(
-    donorsData[9].name, donorsData[9].whatsapp, donorsData[9].address, donorsData[9].city,
-    'Papel e papelão', 'Material de escritório para descarte.', 5, 'Manhã (08h–12h)',
-    DonorRequestStatus.REQUESTED,
-  );
-
-  const donor11 = await createDonorRequest(
-    donorsData[10].name, donorsData[10].whatsapp, donorsData[10].address, donorsData[10].city,
-    'Metal', 'Sucata de ferro e alumínio de oficina.', 60, 'Tarde (13h–17h)',
-    DonorRequestStatus.UNDER_REVIEW,
-  );
-
-  const donor12 = await createDonorRequest(
-    donorsData[11].name, donorsData[11].whatsapp, donorsData[11].address, donorsData[11].city,
-    'Plástico', 'Garrafas PET e embalagens recicláveis.', 25, 'Tarde (13h–17h)',
-    DonorRequestStatus.APPROVED_FOR_PICKUP,
-  );
+  ];
+  const finishedForWeights = allRequests.filter((r) => weightedStatuses.includes(r.status));
 
   // =========================================================================
   // Rotas
   // =========================================================================
 
-  // Active route: DRIVER_ON_THE_WAY (donor4)
+  // Active route: DRIVER_ON_THE_WAY
   const driver = await prisma.driver.findFirst({ where: { userId: driverUser.id } });
-  if (driver) {
+  const driver2 = await prisma.driver.findFirst({ where: { userId: driverUser2.id } });
+  if (driver && activeRouteRequest) {
     const routeTrackingToken = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
 
     await prisma.route.upsert({
-      where: { donorRequestId: donor4.id },
+      where: { donorRequestId: activeRouteRequest.id },
       update: {},
       create: {
-        donorRequestId: donor4.id,
+        donorRequestId: activeRouteRequest.id,
         driverId: driver.id,
         status: RouteStatus.IN_PROGRESS,
         trackingToken: routeTrackingToken,
@@ -447,7 +446,7 @@ async function main() {
             {
               sequence: 1,
               type: 'DONOR_ADDRESS',
-              address: 'Rua Pereira Filgueiras, 150',
+              address: activeRouteRequest.address,
               lat: -3.7319,
               lng: -38.5267,
             },
@@ -466,68 +465,91 @@ async function main() {
     await prisma.businessEvent.create({
       data: {
         entityType: 'route',
-        entityId: donor4.id,
+        entityId: activeRouteRequest.id,
         type: BusinessEventType.ROUTE_STARTED,
-        payload: { routeId: donor4.id, driverId: driver.id },
+        payload: { routeId: activeRouteRequest.id, driverId: driver.id },
       },
     });
   }
 
-  // Finished route (donor7)
-  const pointCentro = pointRecords['Ecoponto Centro/Fortaleza'];
-  if (pointCentro) {
+  // Additional active routes
+  const inProgressStatuses: DonorRequestStatus[] = [
+    DonorRequestStatus.DRIVER_ASSIGNED,
+    DonorRequestStatus.DRIVER_ARRIVED,
+    DonorRequestStatus.COLLECTED,
+    DonorRequestStatus.GOING_TO_COLLECTION_POINT,
+  ];
+  const extraActive = allRequests.filter((r) => inProgressStatuses.includes(r.status)).slice(0, 4);
+  for (let i = 0; i < extraActive.length; i++) {
+    const req = extraActive[i];
+    const assignedDriver = i % 2 === 0 ? driver : driver2;
+    if (!assignedDriver) continue;
+
     await prisma.route.upsert({
-      where: { donorRequestId: donor7.id },
+      where: { donorRequestId: req.id },
       update: {},
       create: {
-        donorRequestId: donor7.id,
-        driverId: driver?.id,
-        status: RouteStatus.FINISHED,
+        donorRequestId: req.id,
+        driverId: assignedDriver.id,
+        status: RouteStatus.IN_PROGRESS,
         trackingToken: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
-        startedAt: new Date(Date.now() - 86400000 * 2),
-        finishedAt: new Date(Date.now() - 86400000),
-        stops: {
-          create: [
-            {
-              sequence: 1,
-              type: 'DONOR_ADDRESS',
-              address: 'Rua Vicente Leite, 1500',
-              lat: -3.7350,
-              lng: -38.4930,
-            },
-            {
-              sequence: 2,
-              type: 'COLLECTION_POINT',
-              collectionPointId: pointCentro,
-              address: 'Rua Barão do Rio Branco, 500',
-              lat: -3.7219,
-              lng: -38.5234,
-            },
-          ],
-        },
+        startedAt: new Date(Date.now() - (i + 1) * 3_600_000),
       },
     });
   }
 
-  // Finished route (donor8)
-  await prisma.route.upsert({
-    where: { donorRequestId: donor8.id },
-    update: {},
-    create: {
-      donorRequestId: donor8.id,
-      driverId: driver?.id,
-      status: RouteStatus.FINISHED,
-      trackingToken: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
-      startedAt: new Date(Date.now() - 86400000 * 5),
-      finishedAt: new Date(Date.now() - 86400000 * 4),
-    },
-  });
+  const pointCentro = pointRecords['Ecoponto Centro/Fortaleza'];
+
+  // Finished routes for completed requests
+  const finishedRequests = finishedForWeights.slice(0, 18);
+  for (let i = 0; i < finishedRequests.length; i++) {
+    const donorReq = finishedRequests[i];
+    const assignedDriver = i % 2 === 0 ? driver : driver2;
+    const startedAt = new Date(Date.now() - (10 + i) * 86_400_000);
+    const finishedAt = new Date(startedAt.getTime() + 4 * 3_600_000);
+
+    await prisma.route.upsert({
+      where: { donorRequestId: donorReq.id },
+      update: {},
+      create: {
+        donorRequestId: donorReq.id,
+        driverId: assignedDriver?.id,
+        status: RouteStatus.FINISHED,
+        trackingToken: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
+        startedAt,
+        finishedAt,
+        ...(pointCentro && i % 2 === 0
+          ? {
+              stops: {
+                create: [
+                  {
+                    sequence: 1,
+                    type: 'DONOR_ADDRESS',
+                    address: donorReq.address,
+                    lat: -3.735,
+                    lng: -38.493,
+                  },
+                  {
+                    sequence: 2,
+                    type: 'COLLECTION_POINT',
+                    collectionPointId: pointCentro,
+                    address: 'Rua Barão do Rio Branco, 500',
+                    lat: -3.7219,
+                    lng: -38.5234,
+                  },
+                ],
+              },
+            }
+          : {}),
+      },
+    });
+  }
 
   // =========================================================================
   // Registros de pesagem para rotas finalizadas
   // =========================================================================
 
-  for (const donor of [donor7, donor8]) {
+  for (const donor of finishedForWeights) {
     const route = await prisma.route.findFirst({ where: { donorRequestId: donor.id } });
     const gross = donor.estimatedWeightKg ? Number(donor.estimatedWeightKg) + 2 : 12;
 
@@ -543,6 +565,7 @@ async function main() {
         tareKg: 2,
         notes: 'Pesagem confirmada pelo operador do ecoponto.',
         confirmedByUserId: collectorUser.id,
+        createdAt: donor.createdAt,
       },
     });
   }
@@ -551,7 +574,15 @@ async function main() {
   // Declarações para pesagens registradas
   // =========================================================================
 
-  for (const donor of [donor7, donor8]) {
+  const declarationStatuses: DonorRequestStatus[] = [
+    DonorRequestStatus.FINISHED,
+    DonorRequestStatus.DECLARATION_AVAILABLE,
+  ];
+  const declarationRequests = finishedForWeights.filter((r) =>
+    declarationStatuses.includes(r.status),
+  );
+
+  for (const donor of declarationRequests) {
     const weightRecord = await prisma.weightRecord.findFirst({ where: { donorRequestId: donor.id } });
     if (!weightRecord) continue;
 
@@ -583,12 +614,13 @@ async function main() {
   // Direcionamentos para pontos de coleta
   // =========================================================================
 
-  if (pointCentro && operator) {
+  const underReviewSample = allRequests.find((r) => r.status === DonorRequestStatus.UNDER_REVIEW);
+  if (pointCentro && operator && underReviewSample) {
     await prisma.pickupDecision.upsert({
-      where: { donorRequestId: donor2.id },
+      where: { donorRequestId: underReviewSample.id },
       update: {},
       create: {
-        donorRequestId: donor2.id,
+        donorRequestId: underReviewSample.id,
         willPickup: false,
         collectionPointId: pointCentro,
         decidedByUserId: operator.id,
@@ -617,14 +649,11 @@ async function main() {
 ║                                                   ║
 ║  8  tipos de material                             ║
 ║  5  pontos de coleta                              ║
-║  12 solicitações (4 REQUESTED,                    ║
-║    2 UNDER_REVIEW, 2 APPROVED,                   ║
-║    1 DRIVER_ON_THE_WAY, 1 COLLECTED,             ║
-║    1 DELIVERED, 2 FINISHED, 1 CANCELLED)         ║
-║  3  rotas (1 em andamento, 2 finalizadas)         ║
-║  2  pesagens                                      ║
-║  2  declarações                                   ║
-║  1  direcionamento para ecoponto                  ║
+║  30 doadores                                      ║
+║  ${String(allRequests.length).padStart(3, ' ')} solicitações (distribuídas)          ║
+║  ${String(finishedForWeights.length).padStart(3, ' ')} pesagens registradas              ║
+║  ${String(declarationRequests.length).padStart(3, ' ')} declarações geradas              ║
+║  5+ rotas em andamento / finalizadas              ║
 ║                                                   ║
 ╚═══════════════════════════════════════════════════╝
   `);
