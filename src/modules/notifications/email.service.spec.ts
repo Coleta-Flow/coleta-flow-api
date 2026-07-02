@@ -14,13 +14,12 @@ describe('EmailService', () => {
   let config: Record<string, any>;
 
   const createService = async (configValues: Record<string, any>) => {
-    config = { get: jest.fn((key: string, defaultValue?: any) => configValues[key] ?? defaultValue) };
+    config = {
+      get: jest.fn((key: string, defaultValue?: any) => configValues[key] ?? defaultValue),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        EmailService,
-        { provide: ConfigService, useValue: config },
-      ],
+      providers: [EmailService, { provide: ConfigService, useValue: config }],
     }).compile();
 
     return module.get<EmailService>(EmailService);
@@ -84,9 +83,7 @@ describe('EmailService', () => {
       html: '<h1>Hello</h1>',
     });
 
-    expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ html: '<h1>Hello</h1>' }),
-    );
+    expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({ html: '<h1>Hello</h1>' }));
   });
 
   it('should send email with attachments', async () => {

@@ -193,6 +193,7 @@ export class DeclarationPdfFactory {
       const arrayBuffer = await response.arrayBuffer();
       return Buffer.from(arrayBuffer);
     }
-    return require('fs').readFileSync(url);
+    const fs = await import('fs');
+    return fs.readFileSync(url);
   }
 }

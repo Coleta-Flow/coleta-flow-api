@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 

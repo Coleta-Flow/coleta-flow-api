@@ -1,19 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { DonorRequestStatus } from '@prisma/client';
 import { WeightRequiredError } from '../../../../common/errors/domain.errors';
 
-// Mock simplified handler for testing declaration generation logic
 const mockPrisma = {
   donorRequest: { findUnique: jest.fn() },
   weightRecord: { findUnique: jest.fn() },
   declaration: { create: jest.fn() },
 };
-
-const mockPdfFactory = {
-  generate: jest.fn(),
-};
-
-const mockEventStore = { save: jest.fn() };
 
 // Isolated business logic function (extracted from handler for testability)
 async function validateAndGenerateDeclaration(donorRequestId: string) {

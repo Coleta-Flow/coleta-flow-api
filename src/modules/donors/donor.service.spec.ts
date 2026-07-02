@@ -22,10 +22,7 @@ describe('DonorService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DonorService,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [DonorService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<DonorService>(DonorService);
@@ -34,7 +31,12 @@ describe('DonorService', () => {
 
   describe('create', () => {
     it('should create a donor', async () => {
-      const dto = { name: 'João', cpfCnpj: '12345678901', email: 'joao@email.com', city: 'Fortaleza' };
+      const dto = {
+        name: 'João',
+        cpfCnpj: '12345678901',
+        email: 'joao@email.com',
+        city: 'Fortaleza',
+      };
 
       mockPrisma.donor.findUnique.mockResolvedValue(null);
       mockPrisma.donor.findFirst.mockResolvedValue(null);
@@ -169,7 +171,9 @@ describe('DonorService', () => {
     it('should throw NotFoundException when donor does not exist', async () => {
       mockPrisma.donor.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', { name: 'Novo' })).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', { name: 'Novo' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should check CPF/CNPJ conflict only when value changed', async () => {
@@ -186,7 +190,11 @@ describe('DonorService', () => {
     it('should soft delete a donor', async () => {
       const donor = { id: 'donor-1', name: 'João', deletedAt: null };
       mockPrisma.donor.findUnique.mockResolvedValue(donor);
-      mockPrisma.donor.update.mockResolvedValue({ ...donor, active: false, deletedAt: expect.any(Date) });
+      mockPrisma.donor.update.mockResolvedValue({
+        ...donor,
+        active: false,
+        deletedAt: expect.any(Date),
+      });
 
       await service.remove('donor-1');
 

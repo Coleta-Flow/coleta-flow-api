@@ -78,17 +78,17 @@ describe('AuthService', () => {
       mockPrisma.user.findFirst.mockResolvedValue({ id: 'user-1', password: 'hashed' });
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(
-        service.login({ email: 'admin@email.com', password: 'wrong' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'admin@email.com', password: 'wrong' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.login({ email: 'noone@email.com', password: 'any' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'noone@email.com', password: 'any' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -201,9 +201,9 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when email is missing', async () => {
-      await expect(
-        service.socialLogin('google', { token: 'token' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.socialLogin('google', { token: 'token' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

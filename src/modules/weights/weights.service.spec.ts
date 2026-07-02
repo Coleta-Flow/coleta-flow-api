@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { DonorRequestStatus, BusinessEventType } from '@prisma/client';
+import { BusinessEventType } from '@prisma/client';
 import { WeightsService } from './weights.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { EventStoreService } from '../event-store/event-store.service';
