@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 import { REDIS_CLIENT, redisKeys } from '../../../../config/redis.config';
 
 export interface DriverLocationPayload {
-  routeId: string;
+  routeId?: string;
   driverId: string;
   lat: number;
   lng: number;
