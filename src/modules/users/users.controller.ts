@@ -9,8 +9,9 @@ import {
   ParseUUIDPipe,
   Request,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UsersService } from './users.service';
@@ -33,8 +34,10 @@ export class UsersController {
   @Get('drivers')
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
   @ApiOperation({ summary: 'List active drivers with vehicle data' })
-  findDrivers() {
-    return this.usersService.findDrivers();
+  @ApiQuery({ name: 'available', required: false, type: Boolean, description: 'Only drivers without active routes' })
+  findDrivers(@Query('available') available?: string) {
+    const onlyAvailable = available === 'true' || available === '1';
+    return this.usersService.findDrivers(onlyAvailable);
   }
 
   @Get(':id')

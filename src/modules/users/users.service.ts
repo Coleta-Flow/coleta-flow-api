@@ -5,11 +5,23 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { UserRole } from '@prisma/client';
+import { UserRole, RouteStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { EmailService } from '../notifications/email.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto, ChangePasswordDto } from './dto/update-user.dto';
+
+const ACTIVE_ROUTE_STATUSES: RouteStatus[] = [
+  RouteStatus.PLANNED,
+  RouteStatus.ASSIGNED,
+  RouteStatus.IN_PROGRESS,
+  RouteStatus.ARRIVED_AT_DONOR,
+  RouteStatus.COLLECTED,
+  RouteStatus.GOING_TO_COLLECTION_POINT,
+  RouteStatus.ARRIVED_AT_COLLECTION_POINT,
+  RouteStatus.DELIVERED,
+  RouteStatus.WEIGHED,
+];
 
 @Injectable()
 export class UsersService {
@@ -43,12 +55,23 @@ export class UsersService {
     });
   }
 
-  findDrivers() {
+  findDrivers(availableOnly = false) {
     return this.prisma.user.findMany({
       where: {
         roleRel: { name: UserRole.DRIVER },
         active: true,
         deletedAt: null,
+        driver: {
+          active: true,
+          deletedAt: null,
+          ...(availableOnly
+            ? {
+                routes: {
+                  none: { status: { in: ACTIVE_ROUTE_STATUSES } },
+                },
+              }
+            : {}),
+        },
       },
       select: {
         id: true,

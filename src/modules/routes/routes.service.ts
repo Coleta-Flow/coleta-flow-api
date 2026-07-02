@@ -7,7 +7,25 @@ import { EventStoreService } from '../event-store/event-store.service';
 import { TrackingRedisService } from '../tracking/infrastructure/redis/tracking-redis.service';
 import { TrackingGateway } from '../tracking/presentation/gateways/tracking.gateway';
 import { haversineDistance } from '../../common/utils/geo.utils';
-import { GeofenceViolationError, DriverNotAssignedError } from '../../common/errors/domain.errors';
+import {
+  GeofenceViolationError,
+  DriverNotAssignedError,
+  InvalidStatusTransitionError,
+  RouteAlreadyActiveError,
+  RouteAlreadyExistsError,
+} from '../../common/errors/domain.errors';
+
+const ACTIVE_ROUTE_STATUSES: RouteStatus[] = [
+  RouteStatus.PLANNED,
+  RouteStatus.ASSIGNED,
+  RouteStatus.IN_PROGRESS,
+  RouteStatus.ARRIVED_AT_DONOR,
+  RouteStatus.COLLECTED,
+  RouteStatus.GOING_TO_COLLECTION_POINT,
+  RouteStatus.ARRIVED_AT_COLLECTION_POINT,
+  RouteStatus.DELIVERED,
+  RouteStatus.WEIGHED,
+];
 
 @Injectable()
 export class RoutesService {
@@ -19,34 +37,88 @@ export class RoutesService {
     private readonly config: ConfigService,
   ) {}
 
-  async createRoute(donorRequestId: string, driverId?: string) {
+  async createRoute(donorRequestId: string, driverId?: string, collectionPointId?: string) {
     const donorRequest = await this.prisma.donorRequest.findFirst({
       where: { id: donorRequestId },
+      include: {
+        donor: true,
+        pickupDecision: true,
+        route: true,
+      },
     });
     if (!donorRequest) throw new NotFoundException('Solicitação não encontrada.');
-
-    const route = await this.prisma.route.create({
-      data: {
-        donorRequestId,
-        driverId: driverId ?? null,
-        status: driverId ? RouteStatus.ASSIGNED : RouteStatus.PLANNED,
-      },
-      include: { donorRequest: true, driver: { include: { user: true } } },
-    });
+    if (donorRequest.status !== DonorRequestStatus.APPROVED_FOR_PICKUP) {
+      throw new InvalidStatusTransitionError(
+        donorRequest.status,
+        DonorRequestStatus.DRIVER_ASSIGNED,
+      );
+    }
+    if (donorRequest.route) throw new RouteAlreadyExistsError();
 
     if (driverId) {
-      await this.prisma.donorRequest.update({
-        where: { id: donorRequestId },
-        data: { status: DonorRequestStatus.DRIVER_ASSIGNED },
-      });
+      await this.assertDriverAvailable(driverId);
     }
+
+    const collectionPoint = await this.resolveCollectionPoint(
+      collectionPointId ?? donorRequest.pickupDecision?.collectionPointId ?? undefined,
+      donorRequest.city,
+    );
+
+    const route = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.route.create({
+        data: {
+          donorRequestId,
+          driverId: driverId ?? null,
+          status: driverId ? RouteStatus.ASSIGNED : RouteStatus.PLANNED,
+          stops: {
+            create: [
+              {
+                sequence: 1,
+                type: 'DONOR_ADDRESS',
+                address: `${donorRequest.address}, ${donorRequest.city}`,
+                lat: donorRequest.donor?.lat ?? null,
+                lng: donorRequest.donor?.lng ?? null,
+              },
+              {
+                sequence: 2,
+                type: 'COLLECTION_POINT',
+                collectionPointId: collectionPoint.id,
+                address:
+                  collectionPoint.address ??
+                  `${collectionPoint.name}, ${collectionPoint.city}`,
+                lat: collectionPoint.lat,
+                lng: collectionPoint.lng,
+              },
+            ],
+          },
+        },
+        include: {
+          donorRequest: true,
+          driver: { include: { user: true } },
+          stops: { orderBy: { sequence: 'asc' } },
+        },
+      });
+
+      if (driverId) {
+        await tx.donorRequest.update({
+          where: { id: donorRequestId },
+          data: { status: DonorRequestStatus.DRIVER_ASSIGNED },
+        });
+      }
+
+      return created;
+    });
 
     await this.eventStore.save({
       entityType: 'Route',
       entityId: route.id,
       type: BusinessEventType.DRIVER_ASSIGNED_TO_ROUTE,
-      payload: { donorRequestId, driverId: driverId ?? null },
+      payload: { donorRequestId, driverId: driverId ?? null, collectionPointId: collectionPoint.id },
     });
+
+    if (driverId) {
+      this.trackingGateway.emitRouteStatusChanged(route.id, RouteStatus.ASSIGNED);
+    }
 
     return route;
   }
@@ -68,15 +140,25 @@ export class RoutesService {
   async assignDriver(routeId: string, driverId: string) {
     const route = await this.getRouteOrThrow(routeId);
 
-    const updated = await this.prisma.route.update({
-      where: { id: routeId },
-      data: { driverId, status: RouteStatus.ASSIGNED },
-      include: { driver: { include: { user: true } } },
-    });
+    if (route.status !== RouteStatus.PLANNED && route.status !== RouteStatus.ASSIGNED) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.ASSIGNED);
+    }
 
-    await this.prisma.donorRequest.update({
-      where: { id: route.donorRequestId },
-      data: { status: DonorRequestStatus.DRIVER_ASSIGNED },
+    await this.assertDriverAvailable(driverId, routeId);
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.route.update({
+        where: { id: routeId },
+        data: { driverId, status: RouteStatus.ASSIGNED },
+        include: { driver: { include: { user: true } }, stops: { orderBy: { sequence: 'asc' } } },
+      });
+
+      await tx.donorRequest.update({
+        where: { id: route.donorRequestId },
+        data: { status: DonorRequestStatus.DRIVER_ASSIGNED },
+      });
+
+      return result;
     });
 
     await this.eventStore.save({
@@ -285,6 +367,9 @@ export class RoutesService {
 
     if (!route.driverId) throw new DriverNotAssignedError();
     if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.ASSIGNED) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.IN_PROGRESS);
+    }
 
     const token = uuidv4();
     const ttlMinutes = this.config.get<number>('TRACKING_TOKEN_EXPIRES_IN_MINUTES', 180);
@@ -293,6 +378,10 @@ export class RoutesService {
       await tx.route.update({
         where: { id: routeId },
         data: { status: RouteStatus.IN_PROGRESS, startedAt: new Date(), trackingToken: token },
+      });
+      await tx.donorRequest.update({
+        where: { id: route.donorRequestId },
+        data: { status: DonorRequestStatus.DRIVER_ON_THE_WAY },
       });
       await tx.trackingSession.create({
         data: {
@@ -371,6 +460,47 @@ export class RoutesService {
     }
 
     return updated;
+  }
+
+  private async resolveCollectionPoint(collectionPointId: string | undefined, city: string) {
+    if (collectionPointId) {
+      const point = await this.prisma.collectionPoint.findFirst({
+        where: { id: collectionPointId, active: true },
+      });
+      if (point) return point;
+    }
+
+    const byCity = await this.prisma.collectionPoint.findFirst({
+      where: { city, active: true },
+      orderBy: { name: 'asc' },
+    });
+    if (byCity) return byCity;
+
+    const fallback = await this.prisma.collectionPoint.findFirst({
+      where: { active: true },
+      orderBy: { name: 'asc' },
+    });
+    if (!fallback) {
+      throw new NotFoundException('Nenhum ponto de coleta disponível.');
+    }
+
+    return fallback;
+  }
+
+  private async assertDriverAvailable(driverId: string, excludeRouteId?: string) {
+    const driver = await this.prisma.driver.findFirst({
+      where: { id: driverId, active: true, deletedAt: null },
+    });
+    if (!driver) throw new NotFoundException('Motorista não encontrado.');
+
+    const activeRoute = await this.prisma.route.findFirst({
+      where: {
+        driverId,
+        status: { in: ACTIVE_ROUTE_STATUSES },
+        ...(excludeRouteId ? { NOT: { id: excludeRouteId } } : {}),
+      },
+    });
+    if (activeRoute) throw new RouteAlreadyActiveError();
   }
 
   private async getRouteOrThrow(routeId: string) {
