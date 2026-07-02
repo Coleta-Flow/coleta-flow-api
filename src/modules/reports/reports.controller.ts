@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -16,6 +16,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get dashboard metrics with optional period filter' })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'Dashboard metrics' })
   getDashboard(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return this.reportsService.getDashboard(startDate, endDate);
   }
@@ -25,6 +26,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get volume summary by type, region, and driver' })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'Volume summary' })
   getSummary(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return this.reportsService.getSummary(startDate, endDate);
   }
@@ -36,6 +38,7 @@ export class ReportsController {
   })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'Efficiency report' })
   getEfficiency(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return this.reportsService.getEfficiency(startDate, endDate);
   }
@@ -45,6 +48,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get sustainability report (RF27): CO₂ avoided by recycling' })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'Sustainability report' })
   getSustainability(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return this.reportsService.getSustainability(startDate, endDate);
   }
@@ -55,6 +59,7 @@ export class ReportsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'format', required: false, enum: ['csv'] })
+  @ApiResponse({ status: 200, description: 'CSV file stream' })
   async export(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,

@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 import { REDIS_CLIENT, redisKeys } from '../../../../config/redis.config';
 
 export interface DriverLocationPayload {
-  routeId: string;
+  routeId?: string;
   driverId: string;
   lat: number;
   lng: number;
@@ -61,5 +61,18 @@ export class TrackingRedisService {
   async invalidateTrackingSession(token: string): Promise<void> {
     const key = redisKeys.trackingSession(token);
     await this.redis.del(key);
+  }
+
+  // Última posição usada pra calcular a polyline da rota — só recalcula
+  // depois que o motorista se afastou o suficiente dessa posição.
+  async getPolylineOrigin(routeId: string): Promise<{ lat: number; lng: number } | null> {
+    const key = redisKeys.routePolylineOrigin(routeId);
+    const raw = await this.redis.get(key);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  async savePolylineOrigin(routeId: string, lat: number, lng: number): Promise<void> {
+    const key = redisKeys.routePolylineOrigin(routeId);
+    await this.redis.setex(key, this.locationTtlSeconds, JSON.stringify({ lat, lng }));
   }
 }

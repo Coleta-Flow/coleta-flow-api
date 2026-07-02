@@ -6,7 +6,9 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { EventStoreService } from '../event-store/event-store.service';
 import { TrackingRedisService } from '../tracking/infrastructure/redis/tracking-redis.service';
 import { TrackingGateway } from '../tracking/presentation/gateways/tracking.gateway';
+import { MapboxDirectionsService } from '../tracking/infrastructure/mapbox-directions.service';
 import { haversineDistance } from '../../common/utils/geo.utils';
+import { DonorRequestStatusVO } from '../donor-requests/domain/value-objects/donor-request-status.vo';
 import {
   GeofenceViolationError,
   DriverNotAssignedError,
@@ -14,6 +16,10 @@ import {
   RouteAlreadyActiveError,
   RouteAlreadyExistsError,
 } from '../../common/errors/domain.errors';
+
+// Só recalcula a polyline depois que o motorista andou essa distância desde o
+// último cálculo — evita estourar o rate limit da Mapbox Directions API.
+const POLYLINE_REFRESH_METERS = 100;
 
 const ACTIVE_ROUTE_STATUSES: RouteStatus[] = [
   RouteStatus.PLANNED,
@@ -34,6 +40,7 @@ export class RoutesService {
     private readonly eventStore: EventStoreService,
     private readonly trackingRedis: TrackingRedisService,
     private readonly trackingGateway: TrackingGateway,
+    private readonly mapboxDirections: MapboxDirectionsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -206,6 +213,9 @@ export class RoutesService {
 
     if (!route.driverId) throw new DriverNotAssignedError();
     if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.ARRIVED_AT_DONOR) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.COLLECTED);
+    }
 
     const updated = await this.prisma.route.update({
       where: { id: routeId },
@@ -236,21 +246,83 @@ export class RoutesService {
     return updated;
   }
 
+  async goingToCollectionPoint(routeId: string, driverId: string) {
+    const route = await this.getRouteOrThrow(routeId);
+
+    if (!route.driverId) throw new DriverNotAssignedError();
+    if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.COLLECTED) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.GOING_TO_COLLECTION_POINT);
+    }
+
+    const updated = await this.prisma.route.update({
+      where: { id: routeId },
+      data: { status: RouteStatus.GOING_TO_COLLECTION_POINT },
+    });
+
+    const statusVO = new DonorRequestStatusVO(DonorRequestStatus.COLLECTED);
+    const nextStatus = statusVO.transitionTo(DonorRequestStatus.GOING_TO_COLLECTION_POINT);
+    await this.prisma.donorRequest.update({
+      where: { id: route.donorRequestId },
+      data: { status: nextStatus.current },
+    });
+
+    await this.eventStore.save({
+      entityType: 'Route',
+      entityId: routeId,
+      type: BusinessEventType.DRIVER_GOING_TO_COLLECTION_POINT,
+      payload: { driverId },
+    });
+
+    this.trackingGateway.emitRouteStatusChanged(routeId, RouteStatus.GOING_TO_COLLECTION_POINT);
+
+    return updated;
+  }
+
+  async arriveAtCollectionPoint(routeId: string, driverId: string) {
+    const route = await this.getRouteOrThrow(routeId);
+
+    if (!route.driverId) throw new DriverNotAssignedError();
+    if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.GOING_TO_COLLECTION_POINT) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.ARRIVED_AT_COLLECTION_POINT);
+    }
+
+    const updated = await this.prisma.route.update({
+      where: { id: routeId },
+      data: { status: RouteStatus.ARRIVED_AT_COLLECTION_POINT },
+    });
+
+    await this.eventStore.save({
+      entityType: 'Route',
+      entityId: routeId,
+      type: BusinessEventType.DRIVER_ARRIVED_AT_COLLECTION_POINT,
+      payload: { driverId },
+    });
+
+    this.trackingGateway.emitRouteStatusChanged(routeId, RouteStatus.ARRIVED_AT_COLLECTION_POINT);
+
+    return updated;
+  }
+
   async finishRoute(routeId: string, driverId: string) {
     const route = await this.getRouteOrThrow(routeId);
 
     if (!route.driverId) throw new DriverNotAssignedError();
     if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.DELIVERED) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.FINISHED);
+    }
 
     const updated = await this.prisma.route.update({
       where: { id: routeId },
       data: { status: RouteStatus.FINISHED, finishedAt: new Date() },
     });
 
-    await this.prisma.donorRequest.update({
-      where: { id: route.donorRequestId },
-      data: { status: DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT },
-    });
+    // DonorRequest.status não é mais tocado aqui — quem avança isso agora é
+    // deliverToPoint (→ DELIVERED_TO_COLLECTION_POINT) e WeightsService
+    // (→ WEIGHED/DECLARATION_AVAILABLE/FINISHED). Sobrescrever aqui apagaria
+    // esse progresso se a pesagem já tiver acontecido antes do finish.
 
     await this.eventStore.save({
       entityType: 'Route',
@@ -314,7 +386,51 @@ export class RoutesService {
       });
     }
 
+    // Polyline centralizada: calcula 1x no backend e distribui via socket —
+    // evita cada cliente (app + site) chamar a Mapbox Directions por conta própria.
+    await this.maybeUpdatePolyline(route.id, route.status, payload.lat, payload.lng);
+
     return { ok: true };
+  }
+
+  private async maybeUpdatePolyline(
+    routeId: string,
+    status: RouteStatus,
+    driverLat: number,
+    driverLng: number,
+  ) {
+    const targetStopType =
+      status === RouteStatus.COLLECTED ||
+      status === RouteStatus.GOING_TO_COLLECTION_POINT ||
+      status === RouteStatus.ARRIVED_AT_COLLECTION_POINT
+        ? 'COLLECTION_POINT'
+        : status === RouteStatus.IN_PROGRESS || status === RouteStatus.ARRIVED_AT_DONOR
+          ? 'DONOR_ADDRESS'
+          : null;
+    if (!targetStopType) return;
+
+    const stop = await this.prisma.routeStop.findFirst({
+      where: { routeId, type: targetStopType },
+    });
+    if (!stop?.lat || !stop?.lng) return;
+
+    const origin = await this.trackingRedis.getPolylineOrigin(routeId);
+    const distanceSinceLastCalc = origin
+      ? haversineDistance(origin.lat, origin.lng, driverLat, driverLng)
+      : null;
+    const shouldRecalculate = !origin || (distanceSinceLastCalc ?? 0) >= POLYLINE_REFRESH_METERS;
+    if (!shouldRecalculate) return;
+
+    const coordinates = await this.mapboxDirections.getRoute(
+      driverLat,
+      driverLng,
+      Number(stop.lat),
+      Number(stop.lng),
+    );
+    if (coordinates.length === 0) return;
+
+    await this.trackingRedis.savePolylineOrigin(routeId, driverLat, driverLng);
+    this.trackingGateway.emitRoutePolyline(routeId, coordinates);
   }
 
   async cancelRoute(routeId: string, reason?: string) {
@@ -445,6 +561,14 @@ export class RoutesService {
 
     this.trackingGateway.emitRouteStatusChanged(routeId, RouteStatus.IN_PROGRESS);
 
+    const [driver, donorRequest] = await Promise.all([
+      this.prisma.driver.findUnique({ where: { id: driverId }, include: { user: true } }),
+      this.prisma.donorRequest.findUnique({ where: { id: route.donorRequestId } }),
+    ]);
+    this.trackingGateway.emitAdminNotification(
+      `${driver?.user?.name ?? 'Motorista'} aceitou a rota para ${donorRequest?.donorName ?? 'um doador'}`,
+    );
+
     return {
       routeId,
       trackingToken: token,
@@ -454,6 +578,7 @@ export class RoutesService {
 
   async deliverToPoint(
     routeId: string,
+    driverId: string,
     data: {
       collectionPointId: string;
       driverLat: number;
@@ -465,6 +590,11 @@ export class RoutesService {
       this.prisma.collectionPoint.findFirst({ where: { id: data.collectionPointId } }),
     ]);
 
+    if (!route.driverId) throw new DriverNotAssignedError();
+    if (route.driverId !== driverId) throw new DriverNotAssignedError();
+    if (route.status !== RouteStatus.ARRIVED_AT_COLLECTION_POINT) {
+      throw new InvalidStatusTransitionError(route.status, RouteStatus.DELIVERED);
+    }
     if (!point) throw new NotFoundException('Ponto de coleta não encontrado.');
 
     const geofenceRadius = this.config.get<number>('GEOFENCE_RADIUS_METERS', 100);
@@ -482,6 +612,13 @@ export class RoutesService {
     const updated = await this.prisma.route.update({
       where: { id: routeId },
       data: { status: RouteStatus.DELIVERED },
+    });
+
+    const statusVO = new DonorRequestStatusVO(DonorRequestStatus.GOING_TO_COLLECTION_POINT);
+    const nextStatus = statusVO.transitionTo(DonorRequestStatus.DELIVERED_TO_COLLECTION_POINT);
+    await this.prisma.donorRequest.update({
+      where: { id: route.donorRequestId },
+      data: { status: nextStatus.current },
     });
 
     await this.eventStore.save({

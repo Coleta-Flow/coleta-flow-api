@@ -1,0 +1,28 @@
+// =============================================================================
+// DriverPermissionEvent — auditoria de permissões de localização do motorista
+// Registra concessão, negação e revogação (foreground/background), detectadas
+// pelo app mobile. Usado pelo console para investigar falhas de rastreamento.
+// =============================================================================
+
+model DriverPermissionEvent {
+  // — Identifiers
+  id     String @id @default(uuid())
+  userId String
+
+  // — Data
+  permissionType PermissionType
+  status         PermissionEventStatus
+  platform       String
+  osVersion      String?
+  appVersion     String?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+
+  // — Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("driver_permission_events")
+}
