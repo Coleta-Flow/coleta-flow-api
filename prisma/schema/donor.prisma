@@ -35,6 +35,10 @@ model Donor {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  // — Portal (conta de acesso vinculada)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
   // — Relations
   donorRequests DonorRequest[]
 

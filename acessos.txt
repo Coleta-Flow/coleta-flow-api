@@ -1,0 +1,12 @@
+EcoLogi — Acessos de Desenvolvimento
+======================================
+Senha padrão: 123456
+
+Email                              Papel                    Nome
+---------------------------------- ------------------------ --------------------
+admin@ecologi.com.br               ADMIN                    Administrador
+operador@ecologi.com.br            OPERATOR                 Maria Oliveira
+motorista@ecologi.com.br           DRIVER                   João Silva
+motorista2@ecologi.com.br          DRIVER                   Pedro Santos
+ponto@ecologi.com.br               COLLECTION_POINT_OPERATOR Carlos Pereira
+doador@ecologi.com.br              DONOR                    Ana Doadora

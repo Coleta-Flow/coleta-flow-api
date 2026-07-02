@@ -25,19 +25,53 @@ export class CreateDonorRequestDto {
   })
   whatsapp: string;
 
-  @ApiPropertyOptional({ example: 'joao@email.com' })
+  @ApiProperty({ example: 'joao@email.com' })
   @IsEmail()
-  @IsOptional()
-  email?: string;
+  email: string;
 
-  @ApiProperty({ example: 'Rua das Flores, 123, Bairro Centro' })
+  @ApiProperty({ example: '123456', description: 'Senha para acesso ao portal do doador' })
   @IsString()
-  @MinLength(5)
-  address: string;
+  @MinLength(6)
+  password: string;
+
+  @ApiPropertyOptional({ example: '123.456.789-00' })
+  @IsString()
+  @IsOptional()
+  cpfCnpj?: string;
+
+  @ApiPropertyOptional({ example: '60175-000' })
+  @IsString()
+  @IsOptional()
+  cep?: string;
+
+  @ApiProperty({ example: 'Rua das Flores' })
+  @IsString()
+  @MinLength(2)
+  street: string;
+
+  @ApiProperty({ example: '123' })
+  @IsString()
+  @MinLength(1)
+  number: string;
+
+  @ApiPropertyOptional({ example: 'Apto 101' })
+  @IsString()
+  @IsOptional()
+  complement?: string;
+
+  @ApiPropertyOptional({ example: 'Centro' })
+  @IsString()
+  @IsOptional()
+  neighborhood?: string;
 
   @ApiProperty({ example: 'Fortaleza' })
   @IsString()
   city: string;
+
+  @ApiPropertyOptional({ example: 'CE' })
+  @IsString()
+  @IsOptional()
+  state?: string;
 
   @ApiProperty({ example: 'uuid-do-tipo-de-material' })
   @IsUUID()

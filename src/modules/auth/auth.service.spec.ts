@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 import { AuthService } from './auth.service';
@@ -93,51 +93,17 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create a DONOR user and return token', async () => {
-      const createdUser = {
-        id: 'user-2',
-        name: 'Novo Doador',
-        email: 'donor@email.com',
-        role: UserRole.DONOR,
-        roleId: 'role-donor',
-      };
-
-      mockPrisma.user.findFirst.mockResolvedValue(null);
-      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-donor', name: UserRole.DONOR });
-      mockPrisma.user.create.mockResolvedValue(createdUser);
-
-      const result = await service.register({
-        name: 'Novo Doador',
-        email: 'donor@email.com',
-        password: 'secure123',
-        phone: '(85) 99999-0000',
-      });
-
-      expect(result.accessToken).toBe('fake-jwt-token');
-      expect(result.refreshToken).toBe('fake-refresh-token');
-      expect(mockPrisma.user.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            name: 'Novo Doador',
-            email: 'donor@email.com',
-            role: UserRole.DONOR,
-            roleId: 'role-donor',
-            phone: '(85) 99999-0000',
-          }),
-        }),
-      );
-    });
-
-    it('should throw ConflictException for duplicate email', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({ id: 'existing' });
-
+    it('should reject direct registration and point to collection request flow', async () => {
       await expect(
         service.register({
-          name: 'Dup',
-          email: 'existing@email.com',
-          password: '123',
+          name: 'Novo Doador',
+          email: 'donor@email.com',
+          password: 'secure123',
+          phone: '(85) 99999-0000',
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
   });
 
@@ -162,26 +128,18 @@ describe('AuthService', () => {
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
 
-    it('should create user when not found', async () => {
+    it('should throw UnauthorizedException when user is not found', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
-      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-donor', name: UserRole.DONOR });
-      mockPrisma.user.create.mockResolvedValue({
-        id: 'new-user',
-        name: 'newuser',
-        email: 'new@email.com',
-        role: UserRole.DONOR,
-        roleId: 'role-donor',
-        active: true,
-      });
 
-      const result = await service.socialLogin('facebook', {
-        token: 'fb-token',
-        email: 'new@email.com',
-        name: 'New User',
-      });
+      await expect(
+        service.socialLogin('facebook', {
+          token: 'fb-token',
+          email: 'new@email.com',
+          name: 'New User',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
 
-      expect(result.accessToken).toBe('fake-jwt-token');
-      expect(mockPrisma.user.create).toHaveBeenCalled();
+      expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for inactive user', async () => {
