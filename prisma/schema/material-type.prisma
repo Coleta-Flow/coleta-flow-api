@@ -7,9 +7,10 @@ model MaterialType {
   id String @id @default(uuid())
 
   // — Data
-  name        String
-  description String?
-  active      Boolean @default(true)
+  name           String
+  description    String?
+  unitOfMeasure  String?  // kg, m³, un (RF06)
+  active         Boolean @default(true)
 
   // — Timestamps
   createdAt DateTime @default(now())

@@ -1,8 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'node:crypto';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RefreshDto } from './dto/refresh.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,16 +24,122 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const payload = { sub: user.id, role: user.role };
+    return this.generateTokens(user);
+  }
+
+  async register(dto: RegisterDto) {
+    const existing = await this.prisma.user.findFirst({
+      where: { email: dto.email },
+    });
+    if (existing) throw new ConflictException('E-mail já cadastrado.');
+
+    const donorRole = await this.prisma.role.findUnique({
+      where: { name: UserRole.DONOR },
+    });
+    if (!donorRole) throw new Error('Role DONOR não encontrada no banco.');
+
+    const hashed = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        password: hashed,
+        role: UserRole.DONOR,
+        roleId: donorRole.id,
+        phone: dto.phone,
+      },
+    });
+
+    return this.generateTokens(user);
+  }
+
+  async socialLogin(provider: string, data: { token: string; name?: string; email?: string }) {
+    if (!data.email) {
+      throw new UnauthorizedException('E-mail é obrigatório para login social.');
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: { email: data.email, deletedAt: null },
+    });
+
+    if (!user) {
+      const donorRole = await this.prisma.role.findUnique({
+        where: { name: UserRole.DONOR },
+      });
+      if (!donorRole) throw new Error('Role DONOR não encontrada no banco.');
+
+      user = await this.prisma.user.create({
+        data: {
+          name: data.name ?? data.email.split('@')[0],
+          email: data.email,
+          password: await bcrypt.hash(Math.random().toString(36), 10),
+          role: UserRole.DONOR,
+          roleId: donorRole.id,
+        },
+      });
+    }
+
+    if (!user.active) {
+      throw new UnauthorizedException('Usuário desativado.');
+    }
+
+    return this.generateTokens(user);
+  }
+
+  async refresh(dto: RefreshDto) {
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { token: dto.refreshToken, revoked: false },
+      include: { user: true },
+    });
+
+    if (!stored || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token inválido ou expirado.');
+    }
+
+    if (!stored.user.active) {
+      throw new UnauthorizedException('Usuário desativado.');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revoked: true },
+    });
+
+    return this.generateTokens(stored.user);
+  }
+
+  async logout(dto: RefreshDto) {
+    await this.prisma.refreshToken.updateMany({
+      where: { token: dto.refreshToken, revoked: false },
+      data: { revoked: true },
+    });
+    return { message: 'Sessão encerrada com sucesso.' };
+  }
+
+  private async generateTokens(user: {
+    id: string;
+    name: string;
+    email: string;
+    roleId: string;
+    role?: UserRole;
+  }) {
+    const payload = { sub: user.id, roleId: user.roleId };
+
+    const accessToken = this.jwt.sign(payload);
+
+    const tokenValue = crypto.randomUUID();
+    const refreshToken = await this.prisma.refreshToken.create({
+      data: {
+        token: tokenValue,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
 
     return {
-      accessToken: this.jwt.sign(payload),
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      accessToken,
+      refreshToken: refreshToken.token,
     };
   }
 }

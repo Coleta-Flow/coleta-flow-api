@@ -1,7 +1,10 @@
-import { Controller, Post, Body, Get, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, Request, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { SocialLoginDto } from './dto/social-login.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Auth')
@@ -11,11 +14,45 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  @ApiOperation({ summary: 'Authenticate and receive JWT token' })
+  @ApiOperation({ summary: 'Authenticate and receive JWT + refresh token' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Post('register')
+  @ApiOperation({ summary: 'Self-register as DONOR (RF31, RF34)' })
+  @ApiResponse({ status: 201, description: 'User registered and JWT returned' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Public()
+  @Post('social/:provider')
+  @ApiOperation({ summary: 'Social login with Google or Facebook (RF34)' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  socialLogin(@Param('provider') provider: string, @Body() dto: SocialLoginDto) {
+    return this.authService.socialLogin(provider, dto);
+  }
+
+  @Public()
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({ status: 200, description: 'New tokens returned' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  refresh(@Body() dto: RefreshDto) {
+    return this.authService.refresh(dto);
+  }
+
+  @Post('logout')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke refresh token' })
+  @ApiResponse({ status: 200, description: 'Session closed' })
+  logout(@Body() dto: RefreshDto) {
+    return this.authService.logout(dto);
   }
 
   @Get('me')

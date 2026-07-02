@@ -22,7 +22,10 @@ export class PublicTrackingController {
     const session = await this.trackingRedis.getTrackingSession(token);
 
     if (!session) {
-      throw new NotFoundException({ code: 'TRACKING_TOKEN_EXPIRED', message: 'Token inválido ou expirado.' });
+      throw new NotFoundException({
+        code: 'TRACKING_TOKEN_EXPIRED',
+        message: 'Token inválido ou expirado.',
+      });
     }
 
     const route = await this.prisma.route.findUnique({

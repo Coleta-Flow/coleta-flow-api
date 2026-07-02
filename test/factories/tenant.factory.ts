@@ -1,9 +1,11 @@
-export function makeTenant(overrides: Partial<{
-  id: string;
-  name: string;
-  slug: string;
-  email: string;
-}> = {}) {
+export function makeTenant(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    slug: string;
+    email: string;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 'tenant-uuid',
     name: overrides.name ?? 'Empresa Teste Ltda',

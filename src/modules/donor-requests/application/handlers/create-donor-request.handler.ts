@@ -1,6 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../../../database/prisma/prisma.service';
 import { CreateDonorRequestCommand } from '../commands/create-donor-request.command';
 import { EventStoreService } from '../../../event-store/event-store.service';
@@ -18,9 +17,38 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
     const trackingCode = `CF-${Date.now().toString(36).toUpperCase()}`;
 
     const request = await this.prisma.$transaction(async (tx) => {
+      // Find or create donor by whatsapp (unique identifier for public form)
+      let donorId: string | undefined;
+
+      if (command.donorWhatsapp) {
+        let donor = await tx.donor.findFirst({
+          where: {
+            OR: [
+              { whatsapp: command.donorWhatsapp },
+              ...(command.donorEmail ? [{ email: command.donorEmail }] : []),
+            ],
+            deletedAt: null,
+          },
+        });
+
+        if (!donor) {
+          donor = await tx.donor.create({
+            data: {
+              name: command.donorName,
+              whatsapp: command.donorWhatsapp,
+              email: command.donorEmail,
+              city: command.city,
+            },
+          });
+        }
+
+        donorId = donor.id;
+      }
+
       const donorRequest = await tx.donorRequest.create({
         data: {
           trackingCode,
+          donorId,
           donorName: command.donorName,
           donorWhatsapp: command.donorWhatsapp,
           donorEmail: command.donorEmail,
@@ -33,12 +61,18 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
         },
       });
 
-      if (command.photoUrls.length > 0) {
+      if (command.photoIds.length > 0) {
+        const fileAssets = await tx.fileAsset.findMany({
+          where: { id: { in: command.photoIds } },
+        });
+
         await tx.donorRequestPhoto.createMany({
-          data: command.photoUrls.map((url) => ({
+          data: fileAssets.map((fa) => ({
             donorRequestId: donorRequest.id,
-            url,
-            filename: url.split('/').pop() ?? 'photo',
+            url: fa.url,
+            filename: fa.filename,
+            sizeBytes: fa.sizeBytes ?? undefined,
+            mimeType: fa.mimeType ?? undefined,
           })),
         });
       }

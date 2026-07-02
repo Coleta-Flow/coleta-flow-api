@@ -19,10 +19,7 @@ export class RoutesService {
     private readonly config: ConfigService,
   ) {}
 
-  async createRoute(
-    donorRequestId: string,
-    driverId?: string,
-  ) {
+  async createRoute(donorRequestId: string, driverId?: string) {
     const donorRequest = await this.prisma.donorRequest.findFirst({
       where: { id: donorRequestId },
     });
@@ -243,7 +240,11 @@ export class RoutesService {
 
     const updated = await this.prisma.route.update({
       where: { id: routeId },
-      data: { status: RouteStatus.CANCELLED, cancelReason: reason ?? null, cancelledAt: new Date() },
+      data: {
+        status: RouteStatus.CANCELLED,
+        cancelReason: reason ?? null,
+        cancelledAt: new Date(),
+      },
     });
 
     await this.prisma.donorRequest.update({
@@ -313,14 +314,21 @@ export class RoutesService {
 
     this.trackingGateway.emitRouteStatusChanged(routeId, RouteStatus.IN_PROGRESS);
 
-    return { routeId, trackingToken: token, trackingUrl: `${this.config.get('APP_URL')}/acompanhar/${token}` };
+    return {
+      routeId,
+      trackingToken: token,
+      trackingUrl: `${this.config.get('APP_URL')}/acompanhar/${token}`,
+    };
   }
 
-  async deliverToPoint(routeId: string, data: {
-    collectionPointId: string;
-    driverLat: number;
-    driverLng: number;
-  }) {
+  async deliverToPoint(
+    routeId: string,
+    data: {
+      collectionPointId: string;
+      driverLat: number;
+      driverLng: number;
+    },
+  ) {
     const [route, point] = await Promise.all([
       this.getRouteOrThrow(routeId),
       this.prisma.collectionPoint.findFirst({ where: { id: data.collectionPointId } }),
@@ -330,8 +338,10 @@ export class RoutesService {
 
     const geofenceRadius = this.config.get<number>('GEOFENCE_RADIUS_METERS', 100);
     const distance = haversineDistance(
-      data.driverLat, data.driverLng,
-      Number(point.lat), Number(point.lng),
+      data.driverLat,
+      data.driverLng,
+      Number(point.lat),
+      Number(point.lng),
     );
 
     if (distance > geofenceRadius) {
@@ -354,7 +364,8 @@ export class RoutesService {
 
     if (route.trackingToken) {
       this.trackingGateway.emitToTrackingToken(route.trackingToken, 'driver:delivered', {
-        routeId, timestamp: new Date().toISOString(),
+        routeId,
+        timestamp: new Date().toISOString(),
       });
       await this.trackingRedis.invalidateTrackingSession(route.trackingToken);
     }

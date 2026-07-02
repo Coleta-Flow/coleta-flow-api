@@ -1,5 +1,5 @@
 // =============================================================================
-// Enums — ColetaFlow
+// Enums — EcoLogi
 // =============================================================================
 
 // Papéis de usuário — controla RBAC em todas as rotas da API
@@ -8,6 +8,7 @@ enum UserRole {
   OPERATOR
   DRIVER
   COLLECTION_POINT_OPERATOR
+  DONOR
 }
 
 // Ciclo de vida de uma solicitação de coleta
@@ -50,6 +51,7 @@ enum RouteStatus {
 enum BusinessEventType {
   DONOR_REQUEST_CREATED
   DONOR_REQUEST_REVIEWED
+  DONOR_REQUEST_UPDATED
   REQUEST_DIRECTED_TO_POINT
   PICKUP_APPROVED
   DRIVER_ASSIGNED_TO_ROUTE

@@ -1,12 +1,14 @@
 import { DonorRequestStatus } from '@prisma/client';
 
-export function makeDonorRequest(overrides: Partial<{
-  id: string;
-  tenantId: string;
-  status: DonorRequestStatus;
-  donorName: string;
-  city: string;
-}> = {}) {
+export function makeDonorRequest(
+  overrides: Partial<{
+    id: string;
+    tenantId: string;
+    status: DonorRequestStatus;
+    donorName: string;
+    city: string;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 'request-uuid',
     tenantId: overrides.tenantId ?? 'tenant-uuid',

@@ -27,17 +27,19 @@ export class WeightRequiredError extends DomainError {
 
 export class InvalidStatusTransitionError extends DomainError {
   constructor(from: string, to: string) {
-    super(
-      'INVALID_STATUS_TRANSITION',
-      `Transição de status inválida: ${from} → ${to}`,
-      { from, to },
-    );
+    super('INVALID_STATUS_TRANSITION', `Transição de status inválida: ${from} → ${to}`, {
+      from,
+      to,
+    });
   }
 }
 
 export class TenantAccessDeniedError extends DomainError {
   constructor() {
-    super('TENANT_ACCESS_DENIED', 'Acesso negado. Você não tem permissão para acessar estes dados.');
+    super(
+      'TENANT_ACCESS_DENIED',
+      'Acesso negado. Você não tem permissão para acessar estes dados.',
+    );
   }
 }
 

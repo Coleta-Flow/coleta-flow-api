@@ -1,7 +1,7 @@
 {
-  "name": "coleta-flow-api",
+  "name": "ecologi-api",
   "version": "0.1.0",
-  "description": "ColetaFlow API — NestJS backend for multi-tenant collection management platform",
+  "description": "EcoLogi API — NestJS backend for collection management platform",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -34,6 +34,7 @@
     "@nestjs/swagger": "^7.3.0",
     "@nestjs/websockets": "^10.3.0",
     "@prisma/client": "^5.22.0",
+    "@scalar/nestjs-api-reference": "^1.2.7",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -41,6 +42,7 @@
     "ioredis": "^5.3.2",
     "joi": "^17.12.3",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pdfkit": "^0.14.0",
@@ -61,6 +63,7 @@
     "@types/jest": "^29.5.12",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.12.7",
+    "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.1",
     "@types/pdfkit": "^0.13.3",
     "@types/qrcode": "^1.5.5",
@@ -85,13 +88,21 @@
     "typescript": "^5.4.5"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "collectCoverageFrom": ["**/*.(t|j)s", "!**/*.module.ts", "!**/main.ts"],
+    "collectCoverageFrom": [
+      "**/*.(t|j)s",
+      "!**/*.module.ts",
+      "!**/main.ts"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
@@ -107,6 +118,9 @@
     }
   },
   "lint-staged": {
-    "*.ts": ["eslint --fix", "prettier --write"]
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

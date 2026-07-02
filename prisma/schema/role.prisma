@@ -1,0 +1,30 @@
+// =============================================================================
+// Role — papéis RBAC com ID imutável (evita expor nome do papel na API)
+// =============================================================================
+
+model Role {
+  id        String   @id @default(uuid())
+  name      UserRole @unique
+  createdAt DateTime @default(now())
+  users     User[]
+
+  @@map("roles")
+}
+
+// =============================================================================
+// RefreshToken — tokens de refresh para renovação segura de JWT
+// =============================================================================
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}

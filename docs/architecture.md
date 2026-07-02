@@ -1,4 +1,4 @@
-# Arquitetura — coleta-flow-api
+# Arquitetura — ecologi-api
 
 **Stack:** NestJS · TypeScript · MySQL 8 · Prisma · Redis 7 · WebSocket (socket.io) · JWT · CQRS
 
@@ -6,7 +6,7 @@
 
 ## Visão geral
 
-A API é o núcleo da plataforma ColetaFlow. Responsável por:
+A API é o núcleo da plataforma EcoLogi. Responsável por:
 - Autenticação e autorização (JWT + RBAC)
 - Isolamento multi-tenant por `tenantId`
 - Gerenciamento de solicitações de coleta com máquina de estados explícita
