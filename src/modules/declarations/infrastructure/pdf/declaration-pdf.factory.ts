@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as PDFDocument from 'pdfkit';
 import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../../../database/prisma/prisma.service';
 
 export interface DeclarationData {
   code: string;
@@ -33,11 +34,36 @@ export interface DeclarationData {
 
 @Injectable()
 export class DeclarationPdfFactory {
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  private companyName = 'ColetaFlow';
+  private primaryColor = '#10B981';
+  private accentColor = '#047857';
+  private logoUrl: string | null = null;
+  private legalText: string | null = null;
 
   async generate(data: DeclarationData): Promise<Buffer> {
+    // RF22 — Load company settings for template customization
+    const settings = await this.prisma.companySetting.findFirst();
+    this.companyName = settings?.companyName ?? 'ColetaFlow';
+    this.primaryColor = settings?.primaryColor ?? '#10B981';
+    this.accentColor = settings?.accentColor ?? '#047857';
+    this.logoUrl = settings?.logoUrl ?? null;
+    this.legalText = settings?.legalText ?? null;
     const qrUrl = `${this.config.get('APP_URL')}/verificar/${data.validationToken}`;
     const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 120, margin: 1 });
+
+    let logoSrc: Buffer | null = null;
+    if (this.logoUrl) {
+      try {
+        logoSrc = await this.loadImage(this.logoUrl);
+      } catch {
+        // Logo loading is best-effort
+      }
+    }
 
     return new Promise<Buffer>((resolve, reject) => {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -47,12 +73,16 @@ export class DeclarationPdfFactory {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Header
+      // Header — RF22 Custom template
       doc
         .fontSize(20)
         .font('Helvetica-Bold')
-        .fillColor('#10B981')
-        .text('ColetaFlow', { align: 'center' });
+        .fillColor(this.primaryColor)
+        .text(this.companyName, { align: 'center' });
+
+      if (logoSrc) {
+        doc.moveUp(0.5).image(logoSrc, { fit: [80, 80], align: 'center' });
+      }
 
       doc
         .fontSize(12)
@@ -110,7 +140,7 @@ export class DeclarationPdfFactory {
         .fontSize(8)
         .fillColor('#94A3B8')
         .text(
-          'Este documento é gerado automaticamente pelo sistema ColetaFlow. A autenticidade pode ser verificada pelo QR Code acima.',
+          this.legalText ?? `Este documento é gerado automaticamente pelo sistema ${this.companyName}. A autenticidade pode ser verificada pelo QR Code acima.`,
           { align: 'center' },
         );
 
@@ -122,7 +152,7 @@ export class DeclarationPdfFactory {
     doc
       .fontSize(11)
       .font('Helvetica-Bold')
-      .fillColor('#047857')
+      .fillColor(this.accentColor ?? '#047857')
       .text(title);
     doc
       .moveTo(doc.page.margins.left, doc.y)
@@ -145,5 +175,14 @@ export class DeclarationPdfFactory {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  }
+
+  private async loadImage(url: string): Promise<Buffer> {
+    if (url.startsWith('http')) {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+    return require('fs').readFileSync(url);
   }
 }

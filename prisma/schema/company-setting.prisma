@@ -1,0 +1,22 @@
+// =============================================================================
+// CompanySetting — configurações de personalização da empresa
+// Usado para template customizável de PDF (RF22)
+// =============================================================================
+
+model CompanySetting {
+  // — Identifiers
+  id String @id @default(uuid())
+
+  // — Dados da empresa
+  companyName  String  @default("ColetaFlow")
+  logoUrl      String?
+  primaryColor String  @default("#10B981")
+  accentColor  String  @default("#047857")
+  legalText    String?
+
+  // — Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("company_settings")
+}

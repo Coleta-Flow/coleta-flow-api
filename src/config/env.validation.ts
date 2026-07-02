@@ -16,4 +16,10 @@ export const envValidationSchema = Joi.object({
   GEOFENCE_RADIUS_METERS: Joi.number().default(100),
   STORAGE_TYPE: Joi.string().valid('local', 's3').default('local'),
   STORAGE_LOCAL_PATH: Joi.string().default('./uploads'),
+  SMTP_HOST: Joi.string().allow('').optional(),
+  SMTP_PORT: Joi.number().default(587),
+  SMTP_SECURE: Joi.string().default('false'),
+  SMTP_USER: Joi.string().allow('').optional(),
+  SMTP_PASS: Joi.string().allow('').optional(),
+  SMTP_FROM: Joi.string().allow('').optional(),
 });

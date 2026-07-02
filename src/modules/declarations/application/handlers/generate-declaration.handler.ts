@@ -5,6 +5,7 @@ import { DonorRequestStatus, BusinessEventType } from '@prisma/client';
 import { PrismaService } from '../../../../database/prisma/prisma.service';
 import { DeclarationPdfFactory } from '../../infrastructure/pdf/declaration-pdf.factory';
 import { EventStoreService } from '../../../event-store/event-store.service';
+import { EmailService } from '../../../notifications/email.service';
 import { GenerateDeclarationCommand } from '../commands/generate-declaration.command';
 import { WeightRequiredError, DeclarationNotApplicableError } from '../../../../common/errors/domain.errors';
 import * as fs from 'fs';
@@ -17,6 +18,7 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
     private readonly prisma: PrismaService,
     private readonly pdfFactory: DeclarationPdfFactory,
     private readonly eventStore: EventStoreService,
+    private readonly emailService: EmailService,
   ) {}
 
   async execute(command: GenerateDeclarationCommand) {
@@ -117,6 +119,29 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
       type: BusinessEventType.DECLARATION_GENERATED,
       payload: { code, donorRequestId, weightKg: Number(weightRecord.netWeightKg) },
     });
+
+    // RF23 — Send declaration by email if donor has an email address
+    if (donorRequest.donorEmail) {
+      try {
+        await this.emailService.send({
+          to: donorRequest.donorEmail,
+          subject: `Declaração de Coleta — ${code}`,
+          html: `
+            <p>Olá <strong>${donorRequest.donorName}</strong>,</p>
+            <p>Sua coleta foi concluída e a declaração ambiental já está disponível.</p>
+            <p><strong>Código:</strong> ${code}</p>
+            <p><strong>Peso registrado:</strong> ${Number(weightRecord.netWeightKg).toFixed(3)} kg</p>
+            <p><strong>Material:</strong> ${donorRequest.materialType?.name ?? 'Não especificado'}</p>
+            <p>A declaração segue em anexo.</p>
+            <hr>
+            <p style="color: #64748b; font-size: 12px;">ColetaFlow — fluxos inteligentes para operações conscientes</p>
+          `,
+          attachments: [{ filename: `${code}.pdf`, content: pdfBuffer }],
+        });
+      } catch {
+        // Email delivery is best-effort
+      }
+    }
 
     return declaration;
   }
