@@ -9,12 +9,9 @@ import { AuthService } from '../../../auth/auth.service';
 import { BusinessEventType } from '@prisma/client';
 
 function buildAddress(command: CreateDonorRequestCommand): string {
-  const parts = [
-    command.street,
-    command.number,
-    command.complement,
-    command.neighborhood,
-  ].filter(Boolean);
+  const parts = [command.street, command.number, command.complement, command.neighborhood].filter(
+    Boolean,
+  );
   return parts.join(', ');
 }
 
@@ -35,7 +32,9 @@ export class CreateDonorRequestHandler implements ICommandHandler<CreateDonorReq
       where: { email: command.donorEmail, deletedAt: null },
     });
     if (existingUser) {
-      throw new ConflictException('E-mail já possui conta. Faça login para acompanhar suas solicitações.');
+      throw new ConflictException(
+        'E-mail já possui conta. Faça login para acompanhar suas solicitações.',
+      );
     }
 
     const donorRole = await this.prisma.role.findUnique({
