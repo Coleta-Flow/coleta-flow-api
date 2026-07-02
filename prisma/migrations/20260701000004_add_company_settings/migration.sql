@@ -1,7 +1,7 @@
 -- CreateTable: company_settings
 CREATE TABLE `company_settings` (
     `id` VARCHAR(191) NOT NULL,
-    `companyName` VARCHAR(191) NOT NULL DEFAULT 'ColetaFlow',
+    `companyName` VARCHAR(191) NOT NULL DEFAULT 'EcoLogi',
     `logoUrl` VARCHAR(191) NULL,
     `primaryColor` VARCHAR(191) NOT NULL DEFAULT '#10B981',
     `accentColor` VARCHAR(191) NOT NULL DEFAULT '#047857',

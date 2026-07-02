@@ -3,7 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('ColetaFlow API')
+    .setTitle('EcoLogi API')
     .setDescription(
       `Single-tenant platform for managing donation requests, collections, reverse logistics,
       route tracking, material weighing and declaration generation.

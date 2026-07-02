@@ -39,7 +39,7 @@ export class DeclarationPdfFactory {
     private readonly prisma: PrismaService,
   ) {}
 
-  private companyName = 'ColetaFlow';
+  private companyName = 'EcoLogi';
   private primaryColor = '#10B981';
   private accentColor = '#047857';
   private logoUrl: string | null = null;
@@ -48,7 +48,7 @@ export class DeclarationPdfFactory {
   async generate(data: DeclarationData): Promise<Buffer> {
     // RF22 — Load company settings for template customization
     const settings = await this.prisma.companySetting.findFirst();
-    this.companyName = settings?.companyName ?? 'ColetaFlow';
+    this.companyName = settings?.companyName ?? 'EcoLogi';
     this.primaryColor = settings?.primaryColor ?? '#10B981';
     this.accentColor = settings?.accentColor ?? '#047857';
     this.logoUrl = settings?.logoUrl ?? null;

@@ -1,6 +1,6 @@
-# coleta-flow-api
+# ecologi-api
 
-Backend da plataforma ColetaFlow.
+Backend da plataforma EcoLogi.
 
 **Stack:** NestJS · TypeScript · MySQL 8 · Prisma · Redis · WebSocket (socket.io) · JWT · Swagger · Jest · Docker
 
@@ -58,7 +58,7 @@ docker-compose up -d
 
 **Nota macOS ARM64:** Docker Desktop às vezes não faz bind de porta do MySQL para o host. Solução:
 ```bash
-docker network connect coleta-flow-api_default coletaflow-mysql
+docker network connect ecologi-api_default ecologi-mysql
 # Então rodar prisma de um container na mesma rede
 ```
 

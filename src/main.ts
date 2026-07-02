@@ -33,7 +33,7 @@ async function bootstrap() {
   const port = config.get<number>('PORT', 3333);
   await app.listen(port);
 
-  console.log(`ColetaFlow API running on http://localhost:${port}`);
+  console.log(`EcoLogi API running on http://localhost:${port}`);
   console.log(`Swagger docs: http://localhost:${port}/docs`);
 }
 

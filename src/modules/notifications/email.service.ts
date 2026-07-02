@@ -35,7 +35,7 @@ export class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: this.config.get<string>('SMTP_FROM', 'noreply@coletaflow.com'),
+      from: this.config.get<string>('SMTP_FROM', 'noreply@ecologi.com.br'),
       to: data.to,
       subject: data.subject,
       text: data.text,

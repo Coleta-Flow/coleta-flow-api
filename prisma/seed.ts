@@ -30,11 +30,11 @@ async function main() {
   // =========================================================================
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@coletaflow.com' },
+    where: { email: 'admin@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'Administrador',
-      email: 'admin@coletaflow.com',
+      email: 'admin@ecologi.com.br',
       password: hash,
       role: UserRole.ADMIN,
       phone: '(85) 98888-0001',
@@ -42,11 +42,11 @@ async function main() {
   });
 
   const operator = await prisma.user.upsert({
-    where: { email: 'operador@coletaflow.com' },
+    where: { email: 'operador@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'Maria Oliveira',
-      email: 'operador@coletaflow.com',
+      email: 'operador@ecologi.com.br',
       password: hash,
       role: UserRole.OPERATOR,
       phone: '(85) 98888-0002',
@@ -54,11 +54,11 @@ async function main() {
   });
 
   const driverUser = await prisma.user.upsert({
-    where: { email: 'motorista@coletaflow.com' },
+    where: { email: 'motorista@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'João Silva',
-      email: 'motorista@coletaflow.com',
+      email: 'motorista@ecologi.com.br',
       password: hash,
       role: UserRole.DRIVER,
       phone: '(85) 98888-0003',
@@ -81,11 +81,11 @@ async function main() {
   });
 
   const driverUser2 = await prisma.user.upsert({
-    where: { email: 'motorista2@coletaflow.com' },
+    where: { email: 'motorista2@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'Pedro Santos',
-      email: 'motorista2@coletaflow.com',
+      email: 'motorista2@ecologi.com.br',
       password: hash,
       role: UserRole.DRIVER,
       phone: '(85) 98888-0004',
@@ -108,11 +108,11 @@ async function main() {
   });
 
   const collectorUser = await prisma.user.upsert({
-    where: { email: 'ponto@coletaflow.com' },
+    where: { email: 'ponto@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'Carlos Pereira',
-      email: 'ponto@coletaflow.com',
+      email: 'ponto@ecologi.com.br',
       password: hash,
       role: UserRole.COLLECTION_POINT_OPERATOR,
       phone: '(85) 98888-0005',
@@ -121,11 +121,11 @@ async function main() {
 
   // DONOR users (RF31)
   await prisma.user.upsert({
-    where: { email: 'doador@coletaflow.com' },
+    where: { email: 'doador@ecologi.com.br' },
     update: { password: hash },
     create: {
       name: 'Ana Doadora',
-      email: 'doador@coletaflow.com',
+      email: 'doador@ecologi.com.br',
       password: hash,
       role: UserRole.DONOR,
       phone: '(85) 98888-0006',
@@ -576,17 +576,17 @@ async function main() {
 
   console.log(`
 ╔═══════════════════════════════════════════════════╗
-║               ColetaFlow — Seed                  ║
+║               EcoLogi — Seed                     ║
 ╠═══════════════════════════════════════════════════╣
 ║                                                   ║
 ║  Usuários (senha: 123456)                        ║
 ║  ─────────────────────────                        ║
-║    admin@coletaflow.com         (ADMIN)           ║
-║    operador@coletaflow.com      (OPERATOR)        ║
-║    motorista@coletaflow.com     (DRIVER)          ║
-║    motorista2@coletaflow.com    (DRIVER)          ║
-║    ponto@coletaflow.com      (PT_OPERATOR)        ║
-║    doador@coletaflow.com     (DONOR)              ║
+║    admin@ecologi.com.br         (ADMIN)           ║
+║    operador@ecologi.com.br      (OPERATOR)        ║
+║    motorista@ecologi.com.br     (DRIVER)          ║
+║    motorista2@ecologi.com.br    (DRIVER)          ║
+║    ponto@ecologi.com.br      (PT_OPERATOR)        ║
+║    doador@ecologi.com.br     (DONOR)              ║
 ║                                                   ║
 ║  8  tipos de material                             ║
 ║  5  pontos de coleta                              ║

@@ -8,7 +8,7 @@ model CompanySetting {
   id String @id @default(uuid())
 
   // — Dados da empresa
-  companyName  String  @default("ColetaFlow")
+  companyName  String  @default("EcoLogi")
   logoUrl      String?
   primaryColor String  @default("#10B981")
   accentColor  String  @default("#047857")

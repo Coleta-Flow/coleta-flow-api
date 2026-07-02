@@ -120,7 +120,7 @@ describe('EmailService', () => {
     await service.send({ to: 'test@example.com', subject: 'Test', text: 'Hello' });
 
     expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ from: 'noreply@coletaflow.com' }),
+      expect.objectContaining({ from: 'noreply@ecologi.com.br' }),
     );
   });
 });

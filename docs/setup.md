@@ -1,4 +1,4 @@
-# Setup — coleta-flow-api
+# Setup — ecologi-api
 
 ## Pré-requisitos
 
@@ -53,7 +53,7 @@ Aguarda healthcheck de MySQL e Redis antes de iniciar a API.
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
-| `DATABASE_URL` | URL de conexão MySQL | `mysql://root:root@localhost:3306/coleta_flow` |
+| `DATABASE_URL` | URL de conexão MySQL | `mysql://root:root@localhost:3306/eco_logi` |
 | `REDIS_HOST` | Host do Redis | `localhost` |
 | `REDIS_PORT` | Porta do Redis | `6379` |
 | `JWT_SECRET` | Segredo JWT (mínimo 32 chars em prod) | `change-me-...` |

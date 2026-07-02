@@ -141,7 +141,7 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
             <p><strong>Material:</strong> ${donorRequest.materialType?.name ?? 'Não especificado'}</p>
             <p>A declaração segue em anexo.</p>
             <hr>
-            <p style="color: #64748b; font-size: 12px;">ColetaFlow — fluxos inteligentes para operações conscientes</p>
+            <p style="color: #64748b; font-size: 12px;">EcoLogi — fluxos inteligentes para operações conscientes</p>
           `,
           attachments: [{ filename: `${code}.pdf`, content: pdfBuffer }],
         });

@@ -1,4 +1,4 @@
-# API Reference — coleta-flow-api
+# API Reference — ecologi-api
 
 **Base URL:** `http://localhost:3333`
 **Swagger:** `http://localhost:3333/docs`
