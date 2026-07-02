@@ -113,6 +113,7 @@ wss://sua-api.up.railway.app/tracking
 | CORS bloqueado | Ajuste `APP_URL` ou `CORS_ORIGINS` com a URL exata do frontend |
 | Redis connection refused | Use `REDIS_URL` do plugin ou referências `${{Redis.*}}` |
 | Uploads sumindo | Migre para `STORAGE_TYPE=s3` |
+| Prisma OpenSSL / `Error load` no deploy | Dockerfile usa `node:22-bookworm-slim` + `openssl`; regenere client após mudar `binaryTargets` |
 
 ## Arquivos relevantes
 
