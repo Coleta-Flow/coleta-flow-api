@@ -23,9 +23,10 @@ model User {
   deletedAt DateTime?
 
   // — Relations
-  donor         Donor?
-  driver        Driver?
-  refreshTokens RefreshToken[]
+  donor            Donor?
+  driver           Driver?
+  refreshTokens    RefreshToken[]
+  permissionEvents DriverPermissionEvent[]
 
   @@unique([email])
   @@map("users")
