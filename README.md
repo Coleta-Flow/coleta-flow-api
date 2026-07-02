@@ -64,6 +64,14 @@ docker network connect ecologi-api_default ecologi-mysql
 
 ---
 
+## Railway (produção)
+
+Deploy com MySQL + Redis no Railway. Guia completo: [`docs/railway.md`](docs/railway.md).
+
+Resumo: conecte o repo, adicione plugins MySQL e Redis, configure `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `APP_URL` e `API_URL`. O Dockerfile aplica migrations automaticamente na subida.
+
+---
+
 ## Banco de dados
 
 ```bash

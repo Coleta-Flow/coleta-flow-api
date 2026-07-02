@@ -19,6 +19,7 @@ import { DonorsModule } from './modules/donors/donor.module';
 import { DonorPortalModule } from './modules/donor-portal/donor-portal.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { CompanySettingsModule } from './modules/company-settings/company-settin
     DonorPortalModule,
     NotificationsModule,
     CompanySettingsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
