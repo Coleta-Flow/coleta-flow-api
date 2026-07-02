@@ -49,6 +49,17 @@ export class UsersService {
             vehicleModel: true,
             licenseNumber: true,
             active: true,
+            vehicleId: true,
+            vehicle: {
+              select: {
+                id: true,
+                plate: true,
+                brand: true,
+                model: true,
+                capacityKg: true,
+                active: true,
+              },
+            },
           },
         },
       },
@@ -86,6 +97,17 @@ export class UsersService {
             vehicleModel: true,
             licenseNumber: true,
             active: true,
+            vehicleId: true,
+            vehicle: {
+              select: {
+                id: true,
+                plate: true,
+                brand: true,
+                model: true,
+                capacityKg: true,
+                active: true,
+              },
+            },
           },
         },
       },
@@ -113,6 +135,17 @@ export class UsersService {
             vehicleModel: true,
             licenseNumber: true,
             active: true,
+            vehicleId: true,
+            vehicle: {
+              select: {
+                id: true,
+                plate: true,
+                brand: true,
+                model: true,
+                capacityKg: true,
+                active: true,
+              },
+            },
           },
         },
       },
@@ -137,6 +170,13 @@ export class UsersService {
         role: dto.role,
         roleId: role.id,
         phone: dto.phone,
+        ...(dto.role === UserRole.DRIVER
+          ? {
+              driver: {
+                create: {},
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -147,6 +187,15 @@ export class UsersService {
         phone: true,
         active: true,
         createdAt: true,
+        driver: {
+          select: {
+            id: true,
+            licenseNumber: true,
+            vehiclePlate: true,
+            vehicleModel: true,
+            active: true,
+          },
+        },
       },
     });
 

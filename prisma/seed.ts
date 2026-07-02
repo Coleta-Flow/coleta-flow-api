@@ -37,6 +37,7 @@ async function main() {
   await safeDeleteMany('collectionPoint', () => prisma.collectionPoint.deleteMany());
   await safeDeleteMany('materialType', () => prisma.materialType.deleteMany());
   await safeDeleteMany('driver', () => prisma.driver.deleteMany());
+  await safeDeleteMany('vehicle', () => prisma.vehicle.deleteMany());
   await safeDeleteMany('refreshToken', () => prisma.refreshToken.deleteMany());
   await safeDeleteMany('user', () => prisma.user.deleteMany());
   await safeDeleteMany('fileAsset', () => prisma.fileAsset.deleteMany());
@@ -59,6 +60,37 @@ async function main() {
     const role = await prisma.role.create({ data: { name } });
     roleMap[name] = role.id;
   }
+
+  // =========================================================================
+  // Veículos
+  // =========================================================================
+
+  const vehicle1 = await prisma.vehicle.create({
+    data: {
+      plate: 'ABC-1234',
+      brand: 'Fiat',
+      model: 'Fiorino 2023',
+      capacityKg: 650,
+    },
+  });
+
+  const vehicle2 = await prisma.vehicle.create({
+    data: {
+      plate: 'XYZ-5678',
+      brand: 'VW',
+      model: 'Kombi 2022',
+      capacityKg: 1200,
+    },
+  });
+
+  const vehicle3 = await prisma.vehicle.create({
+    data: {
+      plate: 'DEF-9012',
+      brand: 'Renault',
+      model: 'Master 2021',
+      capacityKg: 1500,
+    },
+  });
 
   // =========================================================================
   // Usuários
@@ -107,14 +139,16 @@ async function main() {
     where: { userId: driverUser.id },
     update: {
       licenseNumber: '12345678900',
-      vehiclePlate: 'ABC-1234',
-      vehicleModel: 'Fiat Fiorino 2023',
+      vehicleId: vehicle1.id,
+      vehiclePlate: vehicle1.plate,
+      vehicleModel: `${vehicle1.brand} ${vehicle1.model}`,
     },
     create: {
       userId: driverUser.id,
       licenseNumber: '12345678900',
-      vehiclePlate: 'ABC-1234',
-      vehicleModel: 'Fiat Fiorino 2023',
+      vehicleId: vehicle1.id,
+      vehiclePlate: vehicle1.plate,
+      vehicleModel: `${vehicle1.brand} ${vehicle1.model}`,
     },
   });
 
@@ -135,14 +169,16 @@ async function main() {
     where: { userId: driverUser2.id },
     update: {
       licenseNumber: '98765432100',
-      vehiclePlate: 'XYZ-5678',
-      vehicleModel: 'VW Kombi 2022',
+      vehicleId: vehicle2.id,
+      vehiclePlate: vehicle2.plate,
+      vehicleModel: `${vehicle2.brand} ${vehicle2.model}`,
     },
     create: {
       userId: driverUser2.id,
       licenseNumber: '98765432100',
-      vehiclePlate: 'XYZ-5678',
-      vehicleModel: 'VW Kombi 2022',
+      vehicleId: vehicle2.id,
+      vehiclePlate: vehicle2.plate,
+      vehicleModel: `${vehicle2.brand} ${vehicle2.model}`,
     },
   });
 

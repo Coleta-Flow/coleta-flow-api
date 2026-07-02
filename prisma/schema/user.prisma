@@ -38,8 +38,9 @@ model User {
 
 model Driver {
   // — Identifiers
-  id     String @id @default(uuid())
-  userId String @unique
+  id        String  @id @default(uuid())
+  userId    String  @unique
+  vehicleId String?
 
   // — Data
   licenseNumber String?
@@ -53,8 +54,10 @@ model Driver {
   deletedAt DateTime?
 
   // — Relations
-  user   User    @relation(fields: [userId], references: [id])
-  routes Route[]
+  user    User     @relation(fields: [userId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  routes  Route[]
 
+  @@index([vehicleId])
   @@map("drivers")
 }

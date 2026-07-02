@@ -19,6 +19,8 @@ import { DonorsModule } from './modules/donors/donor.module';
 import { DonorPortalModule } from './modules/donor-portal/donor-portal.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
+import { DriversModule } from './modules/drivers/drivers.module';
+import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -45,6 +47,8 @@ import { HealthModule } from './health/health.module';
     DonorPortalModule,
     NotificationsModule,
     CompanySettingsModule,
+    DriversModule,
+    VehiclesModule,
     HealthModule,
   ],
 })

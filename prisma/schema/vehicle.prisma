@@ -1,0 +1,21 @@
+// =============================================================================
+// Vehicle — veículo da frota (atribuível a um motorista por vez)
+// =============================================================================
+
+model Vehicle {
+  id          String  @id @default(uuid())
+  plate       String  @unique
+  brand       String?
+  model       String
+  capacityKg  Decimal? @db.Decimal(10, 2)
+  active      Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  drivers Driver[]
+
+  @@index([active])
+  @@map("vehicles")
+}
