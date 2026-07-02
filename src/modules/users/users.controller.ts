@@ -1,6 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Body, Param, ParseUUIDPipe, Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse,
@@ -40,11 +41,15 @@ export class UsersController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Create a new user (any role)' })
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @ApiOperation({ summary: 'Create a new user (ADMIN: any role, OPERATOR: DRIVER/COLLECTION_POINT only)' })
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  create(@Body() dto: CreateUserDto) {
+  create(@Body() dto: CreateUserDto, @Request() req: any) {
+    const requesterRole = req.user?.role;
+    if (requesterRole === UserRole.OPERATOR && dto.role !== UserRole.DRIVER && dto.role !== UserRole.COLLECTION_POINT_OPERATOR) {
+      throw new UnauthorizedException('Operadores só podem criar motoristas ou operadores de ponto de coleta.');
+    }
     return this.usersService.create(dto);
   }
 

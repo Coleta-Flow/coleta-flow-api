@@ -119,6 +119,19 @@ async function main() {
     },
   });
 
+  // DONOR users (RF31)
+  await prisma.user.upsert({
+    where: { email: 'doador@coletaflow.com' },
+    update: { password: hash },
+    create: {
+      name: 'Ana Doadora',
+      email: 'doador@coletaflow.com',
+      password: hash,
+      role: UserRole.DONOR,
+      phone: '(85) 98888-0006',
+    },
+  });
+
   // =========================================================================
   // Tipos de material
   // =========================================================================
@@ -573,6 +586,7 @@ async function main() {
 ║    motorista@coletaflow.com     (DRIVER)          ║
 ║    motorista2@coletaflow.com    (DRIVER)          ║
 ║    ponto@coletaflow.com      (PT_OPERATOR)        ║
+║    doador@coletaflow.com     (DONOR)              ║
 ║                                                   ║
 ║  8  tipos de material                             ║
 ║  5  pontos de coleta                              ║
