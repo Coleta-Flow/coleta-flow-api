@@ -10,6 +10,11 @@ export class CreateRouteDto {
   @IsUUID()
   @IsOptional()
   driverId?: string;
+
+  @ApiPropertyOptional({ description: 'Ponto de coleta de destino (usa o da decisão ou da cidade)' })
+  @IsUUID()
+  @IsOptional()
+  collectionPointId?: string;
 }
 
 export class AssignDriverDto {

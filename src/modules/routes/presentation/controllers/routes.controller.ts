@@ -15,8 +15,10 @@ export class RoutesController {
   @Roles(UserRole.OPERATOR, UserRole.ADMIN, UserRole.DRIVER)
   @ApiOperation({ summary: 'List routes (DRIVER sees only assigned routes)' })
   findAll(@Request() req: any) {
-    const driverId = req.user.role === UserRole.DRIVER ? req.user.id : undefined;
-    return this.routesService.findAll(driverId);
+    const driverId =
+      req.user.role === UserRole.DRIVER ? (req.user.driverId as string | null) : undefined;
+    if (req.user.role === UserRole.DRIVER && !driverId) return [];
+    return this.routesService.findAll(driverId ?? undefined);
   }
 
   @Post()
@@ -24,7 +26,7 @@ export class RoutesController {
   @ApiOperation({ summary: 'Create a new route from an approved donor request' })
   @ApiResponse({ status: 201, description: 'Route created' })
   create(@Body() dto: CreateRouteDto) {
-    return this.routesService.createRoute(dto.donorRequestId, dto.driverId);
+    return this.routesService.createRoute(dto.donorRequestId, dto.driverId, dto.collectionPointId);
   }
 
   @Get(':id')
@@ -49,7 +51,7 @@ export class RoutesController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Route started, tracking token returned' })
   startRoute(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    return this.routesService.startRoute(id, req.user.id);
+    return this.routesService.startRoute(id, req.user.driverId);
   }
 
   @Patch(':id/arrive-at-donor')
@@ -57,7 +59,7 @@ export class RoutesController {
   @ApiOperation({ summary: 'Driver confirms arrival at donor location' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   arriveAtDonor(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    return this.routesService.confirmArrivalAtDonor(id, req.user.id);
+    return this.routesService.confirmArrivalAtDonor(id, req.user.driverId);
   }
 
   @Patch(':id/collect')
@@ -65,7 +67,7 @@ export class RoutesController {
   @ApiOperation({ summary: 'Driver confirms material collection at donor' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   collect(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    return this.routesService.confirmCollection(id, req.user.id);
+    return this.routesService.confirmCollection(id, req.user.driverId);
   }
 
   @Patch(':id/finish')
@@ -73,7 +75,7 @@ export class RoutesController {
   @ApiOperation({ summary: 'Finish route after delivery to collection point' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   finish(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    return this.routesService.finishRoute(id, req.user.id);
+    return this.routesService.finishRoute(id, req.user.driverId);
   }
 
   @Patch(':id/cancel')

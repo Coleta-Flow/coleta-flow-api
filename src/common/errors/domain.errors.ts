@@ -61,6 +61,12 @@ export class RouteAlreadyActiveError extends DomainError {
   }
 }
 
+export class RouteAlreadyExistsError extends DomainError {
+  constructor() {
+    super('ROUTE_ALREADY_EXISTS', 'Já existe uma rota para esta solicitação.');
+  }
+}
+
 export class DeclarationNotApplicableError extends DomainError {
   constructor() {
     super(
