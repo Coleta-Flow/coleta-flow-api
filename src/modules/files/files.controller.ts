@@ -16,6 +16,7 @@ import {
   ApiBody,
   ApiBearerAuth,
   ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -47,6 +48,8 @@ export class FilesController {
   })
   @ApiQuery({ name: 'entityType', required: false })
   @ApiQuery({ name: 'entityId', required: false })
+  @ApiResponse({ status: 201, description: 'File uploaded, returns the FileAsset with public URL' })
+  @ApiResponse({ status: 400, description: 'Invalid file type or file too large' })
   upload(
     @UploadedFile(
       new ParseFilePipe({
@@ -78,6 +81,8 @@ export class FilesController {
     },
   })
   @ApiQuery({ name: 'entityId', required: false })
+  @ApiResponse({ status: 201, description: 'File uploaded, returns the FileAsset with public URL' })
+  @ApiResponse({ status: 400, description: 'Invalid file type or file too large' })
   uploadPublic(
     @UploadedFile(
       new ParseFilePipe({

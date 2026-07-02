@@ -25,4 +25,5 @@ export const redisKeys = {
   driverLocation: (driverId: string) => `driver:${driverId}:location`,
   routeLiveLocation: (routeId: string) => `route:${routeId}:live-location`,
   trackingSession: (token: string) => `tracking:${token}:session`,
+  routePolylineOrigin: (routeId: string) => `route:${routeId}:polyline-origin`,
 };

@@ -89,6 +89,17 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(ADMIN_ROOM).emit('presence:update', this.presenceSnapshot());
   }
 
+  // Notificação em tempo real pro console admin (toast) — usado por outros módulos
+  // (ex: permission-events) que não precisam de uma tabela de histórico própria,
+  // só de avisar quem está olhando agora.
+  emitAdminNotification(message: string, level: 'info' | 'warning' | 'error' = 'info') {
+    this.server.to(ADMIN_ROOM).emit('notification:new', {
+      message,
+      level,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   // Público — assina sala por routeId (monitor) ou token (doador)
   @SubscribeMessage('tracking:subscribe')
   async handleSubscribe(
@@ -156,5 +167,16 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   emitToTrackingToken(token: string, event: string, data: unknown) {
     this.server.to(`tracking:${token}`).emit(event, data);
+  }
+
+  // Polyline calculada uma única vez no backend (ver MapboxDirectionsService)
+  // e distribuída pra quem estiver assinando a rota — app do motorista e
+  // console web recebem o mesmo trajeto, sem duplicar chamada à Mapbox.
+  emitRoutePolyline(routeId: string, coordinates: { lat: number; lng: number }[]) {
+    this.server.to(`route:${routeId}`).emit('route:polyline', {
+      routeId,
+      coordinates,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

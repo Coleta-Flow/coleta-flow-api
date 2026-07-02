@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Body } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CompanySettingsService } from './company-settings.service';
@@ -14,6 +14,7 @@ export class CompanySettingsController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Get company settings for PDF customization (RF22)' })
+  @ApiResponse({ status: 200, description: 'Company settings' })
   get() {
     return this.service.get();
   }
@@ -21,6 +22,7 @@ export class CompanySettingsController {
   @Patch()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update company settings' })
+  @ApiResponse({ status: 200, description: 'Company settings updated' })
   update(@Body() dto: UpdateCompanySettingsDto) {
     return this.service.update(dto);
   }

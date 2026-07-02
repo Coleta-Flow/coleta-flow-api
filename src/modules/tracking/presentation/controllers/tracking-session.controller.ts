@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Request } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole, BusinessEventType } from '@prisma/client';
 import { IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -21,6 +21,7 @@ export class TrackingSessionController {
   @Post()
   @Roles(UserRole.DRIVER)
   @ApiOperation({ summary: 'Report driver going on/off duty (starts or stops live tracking)' })
+  @ApiResponse({ status: 201, description: 'Tracking session event recorded' })
   async report(@Body() dto: TrackingSessionDto, @Request() req: any) {
     await this.eventStore.save({
       entityType: 'User',

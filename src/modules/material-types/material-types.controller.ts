@@ -9,7 +9,7 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -26,6 +26,7 @@ export class MaterialTypesController {
   @Public()
   @ApiOperation({ summary: 'List active material types' })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
+  @ApiResponse({ status: 200, description: 'List of material types' })
   findAll(@Query('includeInactive') includeInactive?: string) {
     return this.service.findAll(includeInactive === 'true');
   }
@@ -34,6 +35,8 @@ export class MaterialTypesController {
   @Public()
   @ApiOperation({ summary: 'Get material type by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Material type details' })
+  @ApiResponse({ status: 404, description: 'Material type not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findById(id);
   }
@@ -42,6 +45,7 @@ export class MaterialTypesController {
   @ApiBearerAuth()
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Create a new material type' })
+  @ApiResponse({ status: 201, description: 'Material type created' })
   create(@Body() dto: CreateMaterialTypeDto) {
     return this.service.create(dto);
   }
@@ -51,6 +55,8 @@ export class MaterialTypesController {
   @Roles(UserRole.ADMIN, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Update a material type' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Material type updated' })
+  @ApiResponse({ status: 404, description: 'Material type not found' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateMaterialTypeDto) {
     return this.service.update(id, dto);
   }
@@ -60,6 +66,8 @@ export class MaterialTypesController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Deactivate a material type (soft delete)' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Material type deactivated' })
+  @ApiResponse({ status: 404, description: 'Material type not found' })
   deactivate(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.deactivate(id);
   }

@@ -1,7 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PermissionType, PermissionEventStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { TrackingGateway } from '../tracking/presentation/gateways/tracking.gateway';
 import { CreatePermissionEventDto } from './dto/create-permission-event.dto';
+
+const PERMISSION_LABEL: Record<PermissionType, string> = {
+  LOCATION_FOREGROUND: 'localização (foreground)',
+  LOCATION_BACKGROUND: 'localização (background)',
+};
+
+const STATUS_LABEL: Record<PermissionEventStatus, string> = {
+  GRANTED: 'concedeu',
+  DENIED: 'negou',
+  REVOKED: 'revogou',
+};
 
 export interface PermissionEventsQuery {
   userId?: string;
@@ -15,12 +27,25 @@ export interface PermissionEventsQuery {
 
 @Injectable()
 export class PermissionEventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly trackingGateway: TrackingGateway,
+  ) {}
 
-  create(userId: string, dto: CreatePermissionEventDto) {
-    return this.prisma.driverPermissionEvent.create({
-      data: { ...dto, userId },
-    });
+  async create(userId: string, dto: CreatePermissionEventDto) {
+    const [event, user] = await Promise.all([
+      this.prisma.driverPermissionEvent.create({ data: { ...dto, userId } }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    ]);
+
+    const driverName = user?.name ?? 'Motorista';
+    const level = dto.status === 'GRANTED' ? 'info' : dto.status === 'DENIED' ? 'warning' : 'error';
+    this.trackingGateway.emitAdminNotification(
+      `${driverName} ${STATUS_LABEL[dto.status]} a permissão de ${PERMISSION_LABEL[dto.permissionType]}`,
+      level,
+    );
+
+    return event;
   }
 
   async findAll(query: PermissionEventsQuery) {

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CollectionPointsService } from './collection-points.service';
@@ -14,6 +14,7 @@ export class CollectionPointsController {
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'List collection points' })
   @ApiQuery({ name: 'city', required: false })
+  @ApiResponse({ status: 200, description: 'List of collection points' })
   findAll(@Query('city') city?: string) {
     return this.service.findAll(city);
   }
@@ -21,6 +22,8 @@ export class CollectionPointsController {
   @Get(':id')
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get collection point by ID' })
+  @ApiResponse({ status: 200, description: 'Collection point details' })
+  @ApiResponse({ status: 404, description: 'Collection point not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findById(id);
   }
@@ -28,6 +31,7 @@ export class CollectionPointsController {
   @Post()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new collection point' })
+  @ApiResponse({ status: 201, description: 'Collection point created' })
   create(
     @Body()
     body: {

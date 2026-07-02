@@ -15,6 +15,7 @@ model WeightRecord {
   netWeightKg       Decimal  @db.Decimal(10, 3)
   tareKg            Decimal? @db.Decimal(10, 3)
   notes             String?
+  photoUrl          String?
 
   confirmedByUserId String?
 

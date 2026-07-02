@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../../../../common/decorators/public.decorator';
 import { TrackingRedisService } from '../../infrastructure/redis/tracking-redis.service';
 import { PrismaService } from '../../../../database/prisma/prisma.service';
+import { TrackingByTokenResponseDto } from '../../dto/tracking-by-token-response.dto';
 
 @ApiTags('Public Tracking')
 @Controller('public/tracking')
@@ -16,7 +17,7 @@ export class PublicTrackingController {
   @Get(':token')
   @ApiOperation({ summary: 'Get real-time tracking info by tracking token (public, no auth)' })
   @ApiParam({ name: 'token', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Tracking data' })
+  @ApiResponse({ status: 200, description: 'Tracking data', type: TrackingByTokenResponseDto })
   @ApiResponse({ status: 404, description: 'Token expired or route finished' })
   async getTrackingByToken(@Param('token') token: string) {
     const session = await this.trackingRedis.getTrackingSession(token);

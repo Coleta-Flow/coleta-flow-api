@@ -5,6 +5,7 @@ import { PrismaModule } from '../../database/prisma/prisma.module';
 import { REDIS_CLIENT, createRedisClient } from '../../config/redis.config';
 import { TrackingGateway } from './presentation/gateways/tracking.gateway';
 import { TrackingRedisService } from './infrastructure/redis/tracking-redis.service';
+import { MapboxDirectionsService } from './infrastructure/mapbox-directions.service';
 import { WsJwtGuard } from './presentation/guards/ws-jwt.guard';
 import { PublicTrackingController } from './presentation/controllers/public-tracking.controller';
 import { TrackingSessionController } from './presentation/controllers/tracking-session.controller';
@@ -31,8 +32,9 @@ import { TrackingSessionController } from './presentation/controllers/tracking-s
     },
     TrackingRedisService,
     TrackingGateway,
+    MapboxDirectionsService,
     WsJwtGuard,
   ],
-  exports: [TrackingRedisService, TrackingGateway, REDIS_CLIENT],
+  exports: [TrackingRedisService, TrackingGateway, MapboxDirectionsService, REDIS_CLIENT],
 })
 export class TrackingModule {}

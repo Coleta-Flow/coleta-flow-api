@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Query, Request } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UserRole, PermissionType, PermissionEventStatus } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { PermissionEventsService } from './permission-events.service';
@@ -14,6 +14,7 @@ export class PermissionEventsController {
   @Post()
   @Roles(UserRole.DRIVER)
   @ApiOperation({ summary: 'Report a location permission event (granted/denied/revoked)' })
+  @ApiResponse({ status: 201, description: 'Permission event recorded' })
   create(@Body() dto: CreatePermissionEventDto, @Request() req: any) {
     return this.service.create(req.user.id, dto);
   }
@@ -28,6 +29,7 @@ export class PermissionEventsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
+  @ApiResponse({ status: 200, description: 'Paginated list of permission events' })
   findAll(
     @Query('userId') userId?: string,
     @Query('permissionType') permissionType?: PermissionType,
