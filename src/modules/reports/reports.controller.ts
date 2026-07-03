@@ -21,6 +21,15 @@ export class ReportsController {
     return this.reportsService.getDashboard(startDate, endDate);
   }
 
+  @Get('overview')
+  @Roles(UserRole.OPERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get consolidated KPIs for the reports page' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  getOverview(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.reportsService.getOverview(startDate, endDate);
+  }
+
   @Get('summary')
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get volume summary by type, region, and driver' })
@@ -55,22 +64,27 @@ export class ReportsController {
 
   @Get('export')
   @Roles(UserRole.OPERATOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Export reports as CSV (RF30)' })
+  @ApiOperation({ summary: 'Export reports as CSV or PDF (RF30)' })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiQuery({ name: 'format', required: false, enum: ['csv'] })
-  @ApiResponse({ status: 200, description: 'CSV file stream' })
+  @ApiQuery({ name: 'format', required: false, enum: ['csv', 'pdf'] })
+  @ApiResponse({ status: 200, description: 'Report file stream' })
   async export(
+    @Res() res: Response,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Res() res?: Response,
+    @Query('format') format: 'csv' | 'pdf' = 'csv',
   ) {
-    const csv = await this.reportsService.exportCsv(startDate, endDate);
-    if (res) {
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', 'attachment; filename="relatorio.csv"');
-      return res.send(csv);
+    if (format === 'pdf') {
+      const pdf = await this.reportsService.exportPdf(startDate, endDate);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="relatorio-ecologi.pdf"');
+      return res.send(pdf);
     }
-    return csv;
+
+    const csv = await this.reportsService.exportCsv(startDate, endDate);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="relatorio-ecologi.csv"');
+    return res.send(csv);
   }
 }

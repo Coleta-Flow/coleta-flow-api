@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { ReportPdfFactory } from './infrastructure/pdf/report-pdf.factory';
 
 const mockPrisma = {
   donorRequest: { count: jest.fn(), groupBy: jest.fn() },
@@ -9,12 +10,20 @@ const mockPrisma = {
   declaration: { count: jest.fn() },
 };
 
+const mockReportPdfFactory = {
+  generate: jest.fn(),
+};
+
 describe('ReportsService', () => {
   let service: ReportsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ReportsService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        ReportsService,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ReportPdfFactory, useValue: mockReportPdfFactory },
+      ],
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);

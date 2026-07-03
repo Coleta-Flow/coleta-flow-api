@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DonorRequestStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { haversineDistance } from '../../common/utils/geo.utils';
+import { ReportPdfFactory } from './infrastructure/pdf/report-pdf.factory';
+import type { EfficiencyReport, OverviewReport, SummaryReport, SustainabilityReport } from './reports.types';
 
 const CO2_FACTORS: Record<string, number> = {
   'Papel e papelão': 0.9,
@@ -16,7 +18,10 @@ const CO2_FACTORS: Record<string, number> = {
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reportPdfFactory: ReportPdfFactory,
+  ) {}
 
   private dateFilter(startDate?: string, endDate?: string) {
     if (!startDate && !endDate) return {};
@@ -66,7 +71,30 @@ export class ReportsService {
     };
   }
 
-  async getSummary(startDate?: string, endDate?: string) {
+  async getOverview(startDate?: string, endDate?: string): Promise<OverviewReport> {
+    const [summary, efficiency, sustainability] = await Promise.all([
+      this.getSummary(startDate, endDate),
+      this.getEfficiency(startDate, endDate),
+      this.getSustainability(startDate, endDate),
+    ]);
+
+    const totalCollections = summary.byType.reduce((sum, item) => sum + item.count, 0);
+
+    return {
+      period: {
+        startDate: startDate ?? null,
+        endDate: endDate ?? null,
+        label: this.periodLabel(startDate, endDate),
+      },
+      totalWeightCollectedKg: sustainability.totalWeightCollectedKg,
+      totalCo2AvoidedKg: sustainability.totalCo2AvoidedKg,
+      totalFinishedRoutes: efficiency.summary.totalFinishedRoutes,
+      totalDistanceKm: efficiency.summary.totalDistanceKm,
+      totalCollections,
+    };
+  }
+
+  async getSummary(startDate?: string, endDate?: string): Promise<SummaryReport> {
     const dateWhere = this.dateFilter(startDate, endDate);
     const weightWhere = { ...dateWhere };
 
@@ -80,7 +108,7 @@ export class ReportsService {
   }
 
   // RF26 — Efficiency report
-  async getEfficiency(startDate?: string, endDate?: string) {
+  async getEfficiency(startDate?: string, endDate?: string): Promise<EfficiencyReport> {
     const dateWhere = this.startedAtFilter(startDate, endDate);
 
     const routes = await this.prisma.route.findMany({
@@ -157,7 +185,7 @@ export class ReportsService {
   }
 
   // RF27 — Sustainability report
-  async getSustainability(startDate?: string, endDate?: string) {
+  async getSustainability(startDate?: string, endDate?: string): Promise<SustainabilityReport> {
     const dateWhere = this.dateFilter(startDate, endDate);
     const weightWhere = { ...dateWhere };
 
@@ -202,8 +230,24 @@ export class ReportsService {
     };
   }
 
+  async exportPdf(startDate?: string, endDate?: string): Promise<Buffer> {
+    const [summary, efficiency, sustainability] = await Promise.all([
+      this.getSummary(startDate, endDate),
+      this.getEfficiency(startDate, endDate),
+      this.getSustainability(startDate, endDate),
+    ]);
+
+    return this.reportPdfFactory.generate({
+      periodLabel: this.periodLabel(startDate, endDate),
+      generatedAt: new Date(),
+      summary,
+      efficiency,
+      sustainability,
+    });
+  }
+
   // RF30 — Export as CSV
-  async exportCsv(startDate?: string, endDate?: string) {
+  async exportCsv(startDate?: string, endDate?: string): Promise<string> {
     const [summary, efficiency, sustainability] = await Promise.all([
       this.getSummary(startDate, endDate),
       this.getEfficiency(startDate, endDate),
@@ -211,6 +255,10 @@ export class ReportsService {
     ]);
 
     const rows: string[] = [];
+
+    rows.push(`Relatório Eco Logi — ${this.periodLabel(startDate, endDate)}`);
+    rows.push(`Gerado em,${new Date().toISOString()}`);
+    rows.push('');
 
     rows.push('=== RESUMO POR TIPO DE MATERIAL ===');
     rows.push('material,peso_kg,coletas');
@@ -244,7 +292,22 @@ export class ReportsService {
       rows.push(`${item.material},${item.weightKg},${item.co2SavedKg}`);
     }
 
-    return rows.join('\n');
+    return `\uFEFF${rows.join('\n')}`;
+  }
+
+  private periodLabel(startDate?: string, endDate?: string): string {
+    if (!startDate && !endDate) return 'Todo o período';
+    if (startDate && endDate) {
+      return `${this.formatDateLabel(startDate)} a ${this.formatDateLabel(endDate)}`;
+    }
+    if (startDate) return `A partir de ${this.formatDateLabel(startDate)}`;
+    return `Até ${this.formatDateLabel(endDate!)}`;
+  }
+
+  private formatDateLabel(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('pt-BR');
   }
 
   private calculateRouteDistance(stops: { lat?: any; lng?: any }[]): number {
@@ -300,29 +363,20 @@ export class ReportsService {
   private async volumeByDriver(weightWhere: Record<string, unknown>) {
     const records = await this.prisma.weightRecord.findMany({
       where: weightWhere,
-      select: { id: true, netWeightKg: true, routeId: true },
+      include: {
+        donorRequest: {
+          include: {
+            route: { include: { driver: { include: { user: true } } } },
+          },
+        },
+      },
     });
-
-    const routeIds = records.map((r) => r.routeId).filter((id): id is string => id !== null);
-
-    const routes =
-      routeIds.length > 0
-        ? await this.prisma.route.findMany({
-            where: { id: { in: routeIds } },
-            include: { driver: { include: { user: true } } },
-          })
-        : [];
-
-    const routeDriverMap = new Map(
-      routes.map((r) => [r.id, r.driver?.user?.name ?? 'Não atribuído']),
-    );
 
     const map = new Map<string, { driverName: string; totalKg: number; count: number }>();
 
     for (const record of records) {
-      const driverName = record.routeId
-        ? (routeDriverMap.get(record.routeId) ?? 'Não atribuído')
-        : 'Não atribuído';
+      const driverName =
+        record.donorRequest.route?.driver?.user?.name ?? 'Não atribuído';
       const existing = map.get(driverName) ?? { driverName, totalKg: 0, count: 0 };
       existing.totalKg += Number(record.netWeightKg);
       existing.count += 1;
