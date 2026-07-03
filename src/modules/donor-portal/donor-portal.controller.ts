@@ -1,16 +1,22 @@
-import { Controller, Get, Post, Body, Param, ParseUUIDPipe, Query, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseUUIDPipe, Query, Request, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { UserRole } from '@prisma/client';
+import * as fs from 'fs';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DonorPortalService } from './donor-portal.service';
 import { CreateDonorPortalRequestDto } from './dto/create-donor-portal-request.dto';
+import { DeclarationFilesService } from '../declarations/declaration-files.service';
 
 @ApiTags('Donor Portal')
 @ApiBearerAuth()
 @Controller('donor')
 @Roles(UserRole.DONOR)
 export class DonorPortalController {
-  constructor(private readonly donorPortalService: DonorPortalService) {}
+  constructor(
+    private readonly donorPortalService: DonorPortalService,
+    private readonly declarationFiles: DeclarationFilesService,
+  ) {}
 
   @Get('me')
   @ApiOperation({ summary: 'Perfil do doador logado com resumo de doações' })
@@ -53,5 +59,25 @@ export class DonorPortalController {
   @ApiResponse({ status: 201, description: 'Solicitação criada' })
   createRequest(@Request() req: any, @Body() dto: CreateDonorPortalRequestDto) {
     return this.donorPortalService.createRequest(req.user.id, req.user.email, dto);
+  }
+
+  @Get('requests/:id/declaration/download')
+  @ApiOperation({ summary: 'Download da declaração da solicitação do doador' })
+  @ApiResponse({ status: 200, description: 'PDF da declaração' })
+  async downloadDeclaration(
+    @Request() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const declaration = await this.declarationFiles.getForDonorRequest(
+      id,
+      req.user.id,
+      req.user.email,
+    );
+    const { filePath, filename } = this.declarationFiles.resolvePdfPath(declaration);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    fs.createReadStream(filePath).pipe(res);
   }
 }

@@ -7,8 +7,8 @@ import { Roles } from '../../../../common/decorators/roles.decorator';
 import { Public } from '../../../../common/decorators/public.decorator';
 import { GenerateDeclarationCommand } from '../../application/commands/generate-declaration.command';
 import { PrismaService } from '../../../../database/prisma/prisma.service';
+import { DeclarationFilesService } from '../../declaration-files.service';
 import * as fs from 'fs';
-import * as path from 'path';
 
 @ApiTags('Declarations')
 @Controller()
@@ -16,6 +16,7 @@ export class DeclarationsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly prisma: PrismaService,
+    private readonly declarationFiles: DeclarationFilesService,
   ) {}
 
   @Post('declarations/generate')
@@ -40,7 +41,10 @@ export class DeclarationsController {
   @ApiOperation({ summary: 'List declarations' })
   list() {
     return this.prisma.declaration.findMany({
-      include: { donorRequest: true, weightRecord: true },
+      include: {
+        donorRequest: { include: { materialType: true } },
+        weightRecord: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -52,7 +56,10 @@ export class DeclarationsController {
   getOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.prisma.declaration.findFirst({
       where: { id },
-      include: { donorRequest: true, weightRecord: true },
+      include: {
+        donorRequest: { include: { materialType: true } },
+        weightRecord: true,
+      },
     });
   }
 
@@ -62,20 +69,11 @@ export class DeclarationsController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiOperation({ summary: 'Download declaration PDF' })
   async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
-    const declaration = await this.prisma.declaration.findFirst({
-      where: { id },
-    });
-    if (!declaration || !declaration.pdfUrl) {
-      return res.status(404).json({ message: 'PDF não encontrado.' });
-    }
-
-    const filePath = path.join(process.cwd(), declaration.pdfUrl);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Arquivo não encontrado.' });
-    }
+    const declaration = await this.declarationFiles.getById(id);
+    const { filePath, filename } = this.declarationFiles.resolvePdfPath(declaration);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${declaration.code}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     fs.createReadStream(filePath).pipe(res);
   }
 

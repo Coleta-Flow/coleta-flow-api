@@ -53,10 +53,13 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
     if (!weightRecord) throw new WeightRequiredError();
 
     const existing = await this.prisma.declaration.findUnique({ where: { donorRequestId } });
-    if (existing) return existing;
+    if (existing?.pdfUrl) {
+      const existingPath = path.join(process.cwd(), existing.pdfUrl);
+      if (fs.existsSync(existingPath)) return existing;
+    }
 
-    const code = `DCL-${Date.now().toString(36).toUpperCase()}`;
-    const validationToken = uuidv4();
+    const code = existing?.code ?? `DCL-${Date.now().toString(36).toUpperCase()}`;
+    const validationToken = existing?.validationToken ?? uuidv4();
 
     const collectionPoint =
       weightRecord.collectionPoint ??
@@ -102,15 +105,20 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
     const pdfUrl = `/uploads/declarations/${filename}`;
 
     const declaration = await this.prisma.$transaction(async (tx) => {
-      const decl = await tx.declaration.create({
-        data: {
-          donorRequestId,
-          weightRecordId: weightRecord.id,
-          code,
-          pdfUrl,
-          validationToken,
-        },
-      });
+      const decl = existing
+        ? await tx.declaration.update({
+            where: { id: existing.id },
+            data: { pdfUrl, code, validationToken },
+          })
+        : await tx.declaration.create({
+            data: {
+              donorRequestId,
+              weightRecordId: weightRecord.id,
+              code,
+              pdfUrl,
+              validationToken,
+            },
+          });
 
       await tx.donorRequest.update({
         where: { id: donorRequestId },
@@ -120,12 +128,14 @@ export class GenerateDeclarationHandler implements ICommandHandler<GenerateDecla
       return decl;
     });
 
-    await this.eventStore.save({
-      entityType: 'Declaration',
-      entityId: declaration.id,
-      type: BusinessEventType.DECLARATION_GENERATED,
-      payload: { code, donorRequestId, weightKg: Number(weightRecord.netWeightKg) },
-    });
+    if (!existing) {
+      await this.eventStore.save({
+        entityType: 'Declaration',
+        entityId: declaration.id,
+        type: BusinessEventType.DECLARATION_GENERATED,
+        payload: { code, donorRequestId, weightKg: Number(weightRecord.netWeightKg) },
+      });
+    }
 
     // RF23 — Send declaration by email if donor has an email address
     if (donorRequest.donorEmail) {
